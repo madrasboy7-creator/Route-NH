@@ -30,6 +30,10 @@ interface CurrentUser {
 export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
+
+  if (pathname === '/splash') {
+    return null;
+  }
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);

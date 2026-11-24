@@ -16,13 +16,13 @@ export default function RouteNHSplashScreen({
 
   // Animation Stage Tracker: 1 through 6
   const [stage, setStage] = useState<number>(1);
+  const [roadDrawn, setRoadDrawn] = useState<boolean>(false);
   const [isFadingOut, setIsFadingOut] = useState<boolean>(false);
   const [authResolved, setAuthResolved] = useState<boolean>(false);
   const [targetDestination, setTargetDestination] = useState<string>('/login');
-  const animationFinishedRef = useRef<boolean>(false);
 
   useEffect(() => {
-    // Check Authentication in background during animation
+    // 1. Check Authentication in background during animation
     async function checkAuth() {
       try {
         const res = await fetch('/api/v1/auth/me');
@@ -46,13 +46,16 @@ export default function RouteNHSplashScreen({
 
     checkAuth();
 
-    // STAGE 01: Fade In (0ms - 800ms)
-    // Ambient glow begins immediately
+    // STAGE 01: Fade In (0ms - 800ms) - Ambient glow begins immediately
     setStage(1);
 
     // STAGE 02: Road Draws (800ms - 1800ms)
     const t2 = setTimeout(() => {
       setStage(2);
+      // Trigger path drawing stroke transition
+      requestAnimationFrame(() => {
+        setRoadDrawn(true);
+      });
     }, 800);
 
     // STAGE 03: R Forms (1800ms - 2700ms)
@@ -75,9 +78,8 @@ export default function RouteNHSplashScreen({
       setStage(6);
     }, 4400);
 
-    // After 5500ms: Animation timing finished
+    // After 5500ms: Complete and transition smoothly
     const tFinish = setTimeout(() => {
-      animationFinishedRef.current = true;
       if (!standalone) {
         completeLaunch();
       }
@@ -93,7 +95,6 @@ export default function RouteNHSplashScreen({
     };
   }, [standalone]);
 
-  // Once both 5.5s animation and auth check are done, trigger smooth exit
   const completeLaunch = () => {
     try {
       sessionStorage.setItem('route_nh_splash_completed', 'true');
@@ -113,27 +114,29 @@ export default function RouteNHSplashScreen({
 
   return (
     <div
-      className={`fixed inset-0 z-[9999] bg-[#FFFFFF] flex flex-col justify-between items-center select-none overflow-hidden transition-opacity duration-600 ease-in-out ${
+      className={`fixed inset-0 z-[9999] bg-[#FFFFFF] flex flex-col justify-between items-center select-none overflow-hidden ${
         isFadingOut ? 'opacity-0 pointer-events-none' : 'opacity-100'
       }`}
       style={{
         width: '100vw',
         height: '100dvh',
+        backgroundColor: '#FFFFFF',
+        transition: 'opacity 0.6s ease-in-out',
       }}
     >
       {/* STAGE 01: Ambient Central Glow */}
       <div
-        className={`absolute rounded-full pointer-events-none transition-opacity duration-1000 ease-in-out ${
-          stage >= 1 ? 'opacity-100' : 'opacity-0'
-        }`}
+        className="absolute rounded-full pointer-events-none"
         style={{
-          width: '360px',
-          height: '360px',
-          top: '40%',
+          width: '380px',
+          height: '380px',
+          top: '42%',
           left: '50%',
           transform: 'translate(-50%, -50%)',
           background:
             'radial-gradient(circle, rgba(8, 102, 216, 0.16) 0%, rgba(8, 102, 216, 0.05) 45%, rgba(255, 255, 255, 0) 72%)',
+          opacity: stage >= 1 ? 1 : 0,
+          transition: 'opacity 0.8s ease-in-out',
         }}
       />
 
@@ -147,7 +150,7 @@ export default function RouteNHSplashScreen({
         }}
       >
         {/* SVG Canvas for R + Curved Road + NH */}
-        <div className="relative w-[280px] h-[190px] flex items-center justify-center">
+        <div className="relative w-[290px] h-[200px] flex items-center justify-center">
           <svg
             viewBox="0 0 290 200"
             className="w-full h-full overflow-visible"
@@ -156,37 +159,26 @@ export default function RouteNHSplashScreen({
           >
             <defs>
               {/* Electric blue glow filter for road trail */}
-              <filter id="routeGlow" x="-30%" y="-30%" width="160%" height="160%">
+              <filter id="splashGlow" x="-30%" y="-30%" width="160%" height="160%">
                 <feGaussianBlur stdDeviation="3.5" result="blur" />
                 <feComposite in="SourceGraphic" in2="blur" operator="over" />
               </filter>
 
               {/* Gradient for electric blue light trail */}
-              <linearGradient id="roadTrailGrad" x1="0%" y1="100%" x2="100%" y2="0%">
+              <linearGradient id="splashTrailGrad" x1="0%" y1="100%" x2="100%" y2="0%">
                 <stop offset="0%" stopColor="#0866D8" stopOpacity="0.2" />
                 <stop offset="50%" stopColor="#0866D8" stopOpacity="0.95" />
                 <stop offset="100%" stopColor="#38bdf8" stopOpacity="1" />
               </linearGradient>
-
-              {/* Progressive road reveal clip path for Stage 02 */}
-              <clipPath id="progressiveRoadClip">
-                <rect
-                  x="0"
-                  y={stage === 1 ? 200 : stage === 2 ? 0 : 0}
-                  width="290"
-                  height="200"
-                  className="transition-all duration-1000 ease-out"
-                />
-              </clipPath>
             </defs>
 
             {/* STAGE 03: The Stylized Navy R Symbol (#103B82) */}
             <g
-              className="transition-all duration-900 ease-in-out"
               style={{
                 opacity: stage >= 3 ? 1 : 0,
                 transform: stage >= 3 ? 'scale(1)' : 'scale(0.96)',
                 transformOrigin: '90px 95px',
+                transition: 'opacity 0.8s ease-in-out, transform 0.8s cubic-bezier(0.16, 1, 0.3, 1)',
               }}
             >
               <path
@@ -212,13 +204,12 @@ export default function RouteNHSplashScreen({
 
             {/* STAGE 02: Curved Highway Road (#33363C) */}
             <g
-              clipPath="url(#progressiveRoadClip)"
-              className="transition-opacity duration-600 ease-out"
               style={{
                 opacity: stage >= 2 ? 1 : 0,
+                transition: 'opacity 0.4s ease-out',
               }}
             >
-              {/* Dark Charcoal Asphalt Surface */}
+              {/* Dark Charcoal Asphalt Surface with smooth path reveal */}
               <path
                 d="M 28 165
                    L 68 165
@@ -229,6 +220,11 @@ export default function RouteNHSplashScreen({
                    L 28 165
                    Z"
                 fill="#33363C"
+                style={{
+                  strokeDasharray: 600,
+                  strokeDashoffset: roadDrawn ? 0 : 600,
+                  transition: 'stroke-dashoffset 0.9s cubic-bezier(0.2, 0.8, 0.2, 1)',
+                }}
               />
 
               {/* White Dashed Center Markings */}
@@ -242,8 +238,12 @@ export default function RouteNHSplashScreen({
                 stroke="#FFFFFF"
                 strokeWidth="3.2"
                 strokeLinecap="round"
-                className="transition-opacity duration-800"
-                style={{ opacity: stage >= 2 ? 1 : 0 }}
+                style={{
+                  opacity: stage >= 2 ? 1 : 0,
+                  strokeDasharray: 300,
+                  strokeDashoffset: roadDrawn ? 0 : 300,
+                  transition: 'opacity 0.5s ease-out, stroke-dashoffset 0.9s cubic-bezier(0.2, 0.8, 0.2, 1)',
+                }}
               />
 
               {/* Electric Blue Outer Glowing Edge Trail */}
@@ -251,19 +251,25 @@ export default function RouteNHSplashScreen({
                 d="M 46 163
                    C 78 148, 114 118, 144 96
                    C 168 78, 190 58, 215 42"
-                stroke="url(#roadTrailGrad)"
+                stroke="url(#splashTrailGrad)"
                 strokeWidth="3.5"
                 strokeLinecap="round"
-                filter="url(#routeGlow)"
+                filter="url(#splashGlow)"
+                style={{
+                  opacity: stage >= 2 ? 1 : 0,
+                  strokeDasharray: 300,
+                  strokeDashoffset: roadDrawn ? 0 : 300,
+                  transition: 'opacity 0.6s ease-out, stroke-dashoffset 0.9s cubic-bezier(0.2, 0.8, 0.2, 1)',
+                }}
               />
             </g>
 
             {/* STAGE 04: NH Reveals (#0866D8) */}
             <g
-              className="transition-all duration-700 cubic-bezier(0.16, 1, 0.3, 1)"
               style={{
                 opacity: stage >= 4 ? 1 : 0,
                 transform: stage >= 4 ? 'translateX(0px)' : 'translateX(-15px)',
+                transition: 'opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1), transform 0.7s cubic-bezier(0.16, 1, 0.3, 1)',
               }}
             >
               {/* N */}
@@ -304,10 +310,11 @@ export default function RouteNHSplashScreen({
 
         {/* STAGE 05: Brand Wordmark 'ROUTE NH' & Three Decorative Lines */}
         <div
-          className="flex flex-col items-center mt-3 transition-all duration-700 ease-out"
+          className="flex flex-col items-center mt-3"
           style={{
             opacity: stage >= 5 ? 1 : 0,
             transform: stage >= 5 ? 'translateY(0px)' : 'translateY(12px)',
+            transition: 'opacity 0.7s ease-out, transform 0.7s cubic-bezier(0.16, 1, 0.3, 1)',
           }}
         >
           {/* Wordmark: ROUTE NH */}
@@ -320,10 +327,11 @@ export default function RouteNHSplashScreen({
 
           {/* Three Decorative Lines */}
           <div
-            className="flex items-center w-[190px] h-[2.5px] gap-[5px] mb-3.5 transition-all duration-600 ease-out"
+            className="flex items-center w-[190px] h-[2.5px] gap-[5px] mb-3.5"
             style={{
               opacity: stage >= 5 ? 1 : 0,
               transform: stage >= 5 ? 'scaleX(1)' : 'scaleX(0.7)',
+              transition: 'opacity 0.6s ease-out, transform 0.6s cubic-bezier(0.16, 1, 0.3, 1)',
             }}
           >
             {/* 1. Navy Blue */}
@@ -336,10 +344,11 @@ export default function RouteNHSplashScreen({
 
           {/* STAGE 06: Tagline 'FIND YOUR WAY FORWARD' */}
           <div
-            className="text-[9.5px] font-semibold tracking-[0.32em] text-[#103B82] uppercase pl-[0.32em] transition-opacity duration-600 ease-out"
+            className="text-[9.5px] font-semibold tracking-[0.32em] text-[#103B82] uppercase pl-[0.32em]"
             style={{
               opacity: stage >= 6 ? 1 : 0,
               fontFamily: "'Inter', sans-serif",
+              transition: 'opacity 0.6s ease-out',
             }}
           >
             FIND YOUR WAY FORWARD
@@ -349,9 +358,10 @@ export default function RouteNHSplashScreen({
 
       {/* STAGE 06: Three Sequential Pulsing Loading Dots */}
       <div
-        className="absolute bottom-12 flex items-center justify-center space-x-2.5 transition-opacity duration-600 ease-out"
+        className="absolute bottom-12 flex items-center justify-center space-x-2.5"
         style={{
           opacity: stage >= 6 ? 1 : 0,
+          transition: 'opacity 0.5s ease-out',
         }}
       >
         <span

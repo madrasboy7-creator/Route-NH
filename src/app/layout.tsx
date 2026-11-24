@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import Navbar from '@/components/Navbar';
+import AppSplashProvider from '@/components/AppSplashProvider';
 
 export const metadata: Metadata = {
   title: 'Route NH - Road Transportation & Logistics Management Platform',
@@ -24,8 +25,10 @@ export default function RootLayout({
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
       </head>
       <body className="min-h-screen flex flex-col bg-slate-50 text-slate-900">
-        <Navbar />
-        <main className="flex-1 flex flex-col">{children}</main>
+        <AppSplashProvider>
+          <Navbar />
+          <main className="flex-1 flex flex-col">{children}</main>
+        </AppSplashProvider>
       </body>
     </html>
   );

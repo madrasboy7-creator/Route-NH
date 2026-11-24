@@ -1,0 +1,11 @@
+node_modules
+.next
+*.log
+dev.db
+dev.db-journal
+.env
+.env.local
+phone_*.png
+real_hwc.png
+screencap_now.png
+scratch/

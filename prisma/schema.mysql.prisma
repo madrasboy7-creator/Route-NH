@@ -1,0 +1,550 @@
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id               Int       @id @default(autoincrement())
+  publicId         String    @unique @default(uuid()) @db.VarChar(36)
+  fullName         String    @db.VarChar(120)
+  email            String    @unique @db.VarChar(150)
+  phone            String    @unique @db.VarChar(20)
+  passwordHash     String    @db.VarChar(255)
+  roleId           Int
+  accountStatus    String    @default("ACTIVE") @db.VarChar(20)
+  emailVerifiedAt  DateTime?
+  phoneVerifiedAt  DateTime?
+  lastLoginAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  role             Role      @relation(fields: [roleId], references: [id])
+  customer         Customer?
+  driver           Driver?
+  auditLogs        AuditLog[]
+  notifications    Notification[]
+  assignedTrips    TripAssignment[] @relation("AssignedByUser")
+  statusUpdates    TripStatusHistory[]
+  uploadedDocs     ShipmentDocument[] @relation("DocUploader")
+  supportMessages  SupportMessage[]
+
+  @@map("users")
+}
+
+model Role {
+  id          Int              @id @default(autoincrement())
+  name        String           @unique @db.VarChar(50)
+  description String           @db.VarChar(255)
+  users       User[]
+  permissions RolePermission[]
+
+  @@map("roles")
+}
+
+model Permission {
+  id          Int              @id @default(autoincrement())
+  code        String           @unique @db.VarChar(100)
+  module      String           @db.VarChar(50)
+  description String           @db.VarChar(255)
+  roles       RolePermission[]
+
+  @@map("permissions")
+}
+
+model RolePermission {
+  id           Int        @id @default(autoincrement())
+  roleId       Int
+  permissionId Int
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+model Customer {
+  id                 Int       @id @default(autoincrement())
+  userId             Int       @unique
+  customerCode       String    @unique @db.VarChar(30)
+  customerType       String    @default("BUSINESS") @db.VarChar(20)
+  companyName        String?   @db.VarChar(150)
+  gstin              String?   @db.VarChar(20)
+  pan                String?   @db.VarChar(15)
+  billingEmail       String    @db.VarChar(150)
+  billingPhone       String    @db.VarChar(20)
+  verificationStatus String    @default("VERIFIED") @db.VarChar(20)
+  accountStatus      String    @default("ACTIVE") @db.VarChar(20)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  user               User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bookings           Booking[]
+  invoices           Invoice[]
+  supportTickets     SupportTicket[]
+  customerAddresses  CustomerAddress[]
+
+  @@map("customers")
+}
+
+model Driver {
+  id                 Int       @id @default(autoincrement())
+  userId             Int       @unique
+  driverCode         String    @unique @db.VarChar(30)
+  licenceNumber      String    @db.VarChar(50)
+  licenceType        String    @db.VarChar(30)
+  licenceExpiry      DateTime
+  emergencyContact   String    @db.VarChar(50)
+  verificationStatus String    @default("VERIFIED") @db.VarChar(20)
+  driverStatus       String    @default("AVAILABLE") @db.VarChar(20)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  user               User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tripAssignments    TripAssignment[]
+  trackingLocations  TrackingLocation[]
+
+  @@map("drivers")
+}
+
+model Transporter {
+  id                 Int       @id @default(autoincrement())
+  transporterCode    String    @unique @db.VarChar(30)
+  transporterName    String    @db.VarChar(120)
+  companyName        String    @db.VarChar(150)
+  contactDetails     String    @db.VarChar(255)
+  gstin              String?   @db.VarChar(20)
+  pan                String?   @db.VarChar(15)
+  transporterType    String    @db.VarChar(30)
+  verificationStatus String    @default("VERIFIED") @db.VarChar(20)
+  accountStatus      String    @default("ACTIVE") @db.VarChar(20)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  vehicles           Vehicle[]
+  tripAssignments    TripAssignment[]
+  settlements        TransporterSettlement[]
+
+  @@map("transporters")
+}
+
+model Vehicle {
+  id                 Int       @id @default(autoincrement())
+  transporterId      Int
+  registrationNumber String    @unique @db.VarChar(30)
+  vehicleCategory    String    @db.VarChar(50)
+  bodyType           String    @db.VarChar(30)
+  capacityKg         Decimal   @db.Decimal(10, 2)
+  lengthFt           Decimal   @db.Decimal(5, 2)
+  widthFt            Decimal   @db.Decimal(5, 2)
+  heightFt           Decimal   @db.Decimal(5, 2)
+  vehicleStatus      String    @default("AVAILABLE") @db.VarChar(20)
+  insuranceExpiry    DateTime
+  fitnessExpiry      DateTime
+  permitExpiry       DateTime
+  pollutionExpiry    DateTime
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  transporter        Transporter @relation(fields: [transporterId], references: [id])
+  tripAssignments    TripAssignment[]
+
+  @@map("vehicles")
+}
+
+model Address {
+  id         Int               @id @default(autoincrement())
+  line1      String            @db.VarChar(200)
+  line2      String?           @db.VarChar(200)
+  city       String            @db.VarChar(80)
+  state      String            @db.VarChar(80)
+  postalCode String            @db.VarChar(15)
+  latitude   Decimal?          @db.Decimal(10, 7)
+  longitude  Decimal?          @db.Decimal(10, 7)
+  customers  CustomerAddress[]
+
+  @@map("addresses")
+}
+
+model CustomerAddress {
+  id          Int      @id @default(autoincrement())
+  customerId  Int
+  addressId   Int
+  addressType String   @default("BILLING") @db.VarChar(20)
+  customer    Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  address     Address  @relation(fields: [addressId], references: [id], onDelete: Cascade)
+
+  @@map("customer_addresses")
+}
+
+model Booking {
+  id                      Int       @id @default(autoincrement())
+  bookingReference        String    @unique @db.VarChar(40)
+  customerId              Int
+  createdByUserId         Int
+  requestedPickupDate     DateTime
+  preferredDeliveryDate   DateTime
+  goodsDescription        String    @db.VarChar(255)
+  goodsCategory           String    @db.VarChar(50)
+  totalWeightKg           Decimal   @db.Decimal(10, 2)
+  packageCount            Int
+  cargoValue              Decimal   @db.Decimal(14, 2)
+  requiredVehicleCategory String    @db.VarChar(50)
+  specialInstructions     String?   @db.Text
+  bookingStatus           String    @default("REQUESTED") @db.VarChar(35)
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+
+  customer                Customer  @relation(fields: [customerId], references: [id])
+  stops                   BookingStop[]
+  items                   BookingItem[]
+  quotations              Quotation[]
+  trip                    Trip?
+  documents               ShipmentDocument[]
+  invoices                Invoice[]
+
+  @@map("bookings")
+}
+
+model BookingStop {
+  id               Int       @id @default(autoincrement())
+  bookingId        Int
+  stopType         String    @db.VarChar(20)
+  sequenceNumber   Int       @default(1)
+  contactName      String    @db.VarChar(100)
+  contactPhone     String    @db.VarChar(20)
+  addressLine1     String    @db.VarChar(200)
+  addressLine2     String?   @db.VarChar(200)
+  city             String    @db.VarChar(80)
+  state            String    @db.VarChar(80)
+  postalCode       String    @db.VarChar(15)
+  latitude         Decimal?  @db.Decimal(10, 7)
+  longitude        Decimal?  @db.Decimal(10, 7)
+  scheduledArrival DateTime
+  actualArrival    DateTime?
+  actualDeparture  DateTime?
+  instructions     String?   @db.Text
+
+  booking          Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@map("booking_stops")
+}
+
+model BookingItem {
+  id                   Int      @id @default(autoincrement())
+  bookingId            Int
+  itemDescription      String   @db.VarChar(200)
+  packageType          String   @db.VarChar(40)
+  quantity             Int
+  unitWeightKg         Decimal  @db.Decimal(10, 2)
+  totalWeightKg        Decimal  @db.Decimal(10, 2)
+  lengthCm             Decimal? @db.Decimal(8, 2)
+  widthCm              Decimal? @db.Decimal(8, 2)
+  heightCm             Decimal? @db.Decimal(8, 2)
+  declaredValue        Decimal  @db.Decimal(12, 2)
+  handlingInstructions String?  @db.Text
+
+  booking              Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@map("booking_items")
+}
+
+model Quotation {
+  id                 Int               @id @default(autoincrement())
+  quotationReference String            @unique @db.VarChar(40)
+  bookingId          Int
+  versionNumber      Int               @default(1)
+  preparedBy         String            @db.VarChar(100)
+  baseFreight        Decimal           @db.Decimal(12, 2)
+  taxableAmount      Decimal           @db.Decimal(12, 2)
+  taxAmount          Decimal           @db.Decimal(12, 2)
+  grandTotal         Decimal           @db.Decimal(12, 2)
+  currency           String            @default("INR") @db.VarChar(10)
+  validUntil         DateTime
+  quotationStatus    String            @default("SENT") @db.VarChar(30)
+  sentAt             DateTime?
+  acceptedAt         DateTime?
+  createdAt          DateTime          @default(now())
+
+  booking            Booking           @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  charges            QuotationCharge[]
+
+  @@map("quotations")
+}
+
+model QuotationCharge {
+  id          Int       @id @default(autoincrement())
+  quotationId Int
+  chargeType  String    @db.VarChar(40)
+  description String    @db.VarChar(150)
+  amount      Decimal   @db.Decimal(12, 2)
+  taxable     Boolean   @default(true)
+  taxRate     Decimal   @default(18.0) @db.Decimal(5, 2)
+
+  quotation   Quotation @relation(fields: [quotationId], references: [id], onDelete: Cascade)
+
+  @@map("quotation_charges")
+}
+
+model Trip {
+  id              Int       @id @default(autoincrement())
+  tripReference   String    @unique @db.VarChar(40)
+  bookingId       Int       @unique
+  tripStatus      String    @default("CREATED") @db.VarChar(30)
+  plannedPickup   DateTime
+  plannedDelivery DateTime
+  actualPickup    DateTime?
+  actualDelivery  DateTime?
+  createdBy       String    @db.VarChar(100)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  booking         Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  assignments     TripAssignment[]
+  statusHistory   TripStatusHistory[]
+  tracking        TrackingLocation[]
+  documents       ShipmentDocument[]
+
+  @@map("trips")
+}
+
+model TripAssignment {
+  id               Int         @id @default(autoincrement())
+  tripId           Int
+  vehicleId        Int
+  driverId         Int
+  transporterId    Int
+  assignedBy       Int
+  assignedAt       DateTime    @default(now())
+  assignmentStatus String      @default("ACTIVE") @db.VarChar(20)
+  unassignedAt     DateTime?
+  createdAt        DateTime    @default(now())
+
+  trip             Trip        @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  vehicle          Vehicle     @relation(fields: [vehicleId], references: [id])
+  driver           Driver      @relation(fields: [driverId], references: [id])
+  transporter      Transporter @relation(fields: [transporterId], references: [id])
+  assigner         User        @relation("AssignedByUser", fields: [assignedBy], references: [id])
+
+  @@map("trip_assignments")
+}
+
+model TripStatusHistory {
+  id               Int      @id @default(autoincrement())
+  tripId           Int
+  previousStatus   String   @db.VarChar(30)
+  newStatus        String   @db.VarChar(30)
+  updatedByUserId  Int
+  statusNote       String?  @db.Text
+  latitude         Decimal? @db.Decimal(10, 7)
+  longitude        Decimal? @db.Decimal(10, 7)
+  createdAt        DateTime @default(now())
+
+  trip             Trip     @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  updatedBy        User     @relation(fields: [updatedByUserId], references: [id])
+
+  @@map("trip_status_history")
+}
+
+model TrackingLocation {
+  id             Int      @id @default(autoincrement())
+  tripId         Int
+  driverId       Int
+  latitude       Decimal  @db.Decimal(10, 7)
+  longitude      Decimal  @db.Decimal(10, 7)
+  accuracyMeters Decimal? @db.Decimal(8, 2)
+  speed          Decimal? @db.Decimal(8, 2)
+  heading        Decimal? @db.Decimal(8, 2)
+  recordedAt     DateTime @default(now())
+  receivedAt     DateTime @default(now())
+
+  trip           Trip     @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  driver         Driver   @relation(fields: [driverId], references: [id])
+
+  @@map("tracking_locations")
+}
+
+model ShipmentDocument {
+  id               Int       @id @default(autoincrement())
+  bookingId        Int
+  tripId           Int?
+  uploadedByUserId Int
+  documentType     String    @db.VarChar(30)
+  storageKey       String    @db.VarChar(255)
+  originalFileName String    @db.VarChar(255)
+  mimeType         String    @db.VarChar(100)
+  fileSize         Int
+  documentStatus   String    @default("PENDING_VERIFICATION") @db.VarChar(25)
+  verifiedBy       String?   @db.VarChar(100)
+  verifiedAt       DateTime?
+  createdAt        DateTime  @default(now())
+
+  booking          Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  trip             Trip?     @relation(fields: [tripId], references: [id], onDelete: SetNull)
+  uploader         User      @relation("DocUploader", fields: [uploadedByUserId], references: [id])
+
+  @@map("shipment_documents")
+}
+
+model Invoice {
+  id            Int           @id @default(autoincrement())
+  invoiceNumber String        @unique @db.VarChar(40)
+  bookingId     Int
+  customerId    Int
+  invoiceDate   DateTime      @default(now())
+  dueDate       DateTime
+  subtotal      Decimal       @db.Decimal(12, 2)
+  taxAmount     Decimal       @db.Decimal(12, 2)
+  grandTotal    Decimal       @db.Decimal(12, 2)
+  invoiceStatus String        @default("ISSUED") @db.VarChar(20)
+  createdAt     DateTime      @default(now())
+
+  booking       Booking       @relation(fields: [bookingId], references: [id])
+  customer      Customer      @relation(fields: [customerId], references: [id])
+  items         InvoiceItem[]
+  payments      Payment[]
+
+  @@map("invoices")
+}
+
+model InvoiceItem {
+  id            Int     @id @default(autoincrement())
+  invoiceId     Int
+  description   String  @db.VarChar(200)
+  quantity      Int     @default(1)
+  unitPrice     Decimal @db.Decimal(12, 2)
+  taxableAmount Decimal @db.Decimal(12, 2)
+  taxRate       Decimal @default(18.0) @db.Decimal(5, 2)
+  taxAmount     Decimal @db.Decimal(12, 2)
+  lineTotal     Decimal @db.Decimal(12, 2)
+
+  invoice       Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@map("invoice_items")
+}
+
+model Payment {
+  id               Int       @id @default(autoincrement())
+  invoiceId        Int
+  receiptReference String    @unique @db.VarChar(40)
+  amount           Decimal   @db.Decimal(12, 2)
+  paymentMethod    String    @db.VarChar(30)
+  paymentStatus    String    @default("SUCCESS") @db.VarChar(20)
+  gatewayReference String?   @db.VarChar(100)
+  receivedBy       String    @db.VarChar(100)
+  paidAt           DateTime  @default(now())
+  createdAt        DateTime  @default(now())
+
+  invoice          Invoice   @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@map("payments")
+}
+
+model TransporterSettlement {
+  id            Int         @id @default(autoincrement())
+  transporterId Int
+  tripId        Int
+  amount        Decimal     @db.Decimal(12, 2)
+  status        String      @default("PENDING") @db.VarChar(20)
+  settledAt     DateTime?
+  createdAt     DateTime    @default(now())
+
+  transporter   Transporter @relation(fields: [transporterId], references: [id])
+
+  @@map("transporter_settlements")
+}
+
+model Notification {
+  id               Int       @id @default(autoincrement())
+  userId           Int
+  notificationType String    @db.VarChar(30)
+  channel          String    @default("IN_APP") @db.VarChar(20)
+  title            String    @db.VarChar(150)
+  message          String    @db.Text
+  bookingId        Int?
+  tripId           Int?
+  deliveryStatus   String    @default("DELIVERED") @db.VarChar(20)
+  sentAt           DateTime  @default(now())
+  readAt           DateTime?
+  createdAt        DateTime  @default(now())
+
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+
+model SupportTicket {
+  id               Int              @id @default(autoincrement())
+  customerId       Int
+  bookingReference String?          @db.VarChar(40)
+  issueCategory    String           @db.VarChar(40)
+  subject          String           @db.VarChar(200)
+  description      String           @db.Text
+  priority         String           @default("MEDIUM") @db.VarChar(20)
+  status           String           @default("OPEN") @db.VarChar(20)
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  customer         Customer         @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  messages         SupportMessage[]
+
+  @@map("support_tickets")
+}
+
+model SupportMessage {
+  id            Int           @id @default(autoincrement())
+  ticketId      Int
+  senderUserId  Int
+  message       String        @db.Text
+  attachmentUrl String?       @db.VarChar(255)
+  createdAt     DateTime      @default(now())
+
+  ticket        SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  sender        User          @relation(fields: [senderUserId], references: [id])
+
+  @@map("support_messages")
+}
+
+model RouteRate {
+  id              Int      @id @default(autoincrement())
+  sourceCity      String   @db.VarChar(80)
+  destinationCity String   @db.VarChar(80)
+  vehicleCategory String   @db.VarChar(50)
+  baseRate        Decimal  @db.Decimal(12, 2)
+  perKmRate       Decimal  @db.Decimal(8, 2)
+  minCharge       Decimal  @db.Decimal(12, 2)
+  estimatedHours  Decimal  @db.Decimal(6, 1)
+  isActive        Boolean  @default(true)
+
+  @@map("route_rates")
+}
+
+model AuditLog {
+  id           Int      @id @default(autoincrement())
+  actorUserId  Int?
+  action       String   @db.VarChar(40)
+  entityType   String   @db.VarChar(40)
+  entityId     String   @db.VarChar(40)
+  oldValues    String?  @db.Text
+  newValues    String?  @db.Text
+  ipAddress    String?  @db.VarChar(45)
+  createdAt    DateTime @default(now())
+
+  actor        User?    @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@map("audit_logs")
+}
+
+model ApplicationSetting {
+  id           Int      @id @default(autoincrement())
+  settingKey   String   @unique @db.VarChar(80)
+  settingValue String   @db.Text
+  description  String?  @db.VarChar(255)
+  updatedBy    String?  @db.VarChar(100)
+  updatedAt    DateTime @updatedAt
+
+  @@map("application_settings")
+}

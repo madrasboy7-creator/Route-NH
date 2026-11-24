@@ -1,0 +1,491 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id               Int       @id @default(autoincrement())
+  publicId         String    @unique @default(uuid())
+  fullName         String
+  email            String    @unique
+  phone            String    @unique
+  passwordHash     String
+  roleId           Int
+  accountStatus    String    @default("ACTIVE") // ACTIVE, SUSPENDED, PENDING
+  emailVerifiedAt  DateTime?
+  phoneVerifiedAt  DateTime?
+  lastLoginAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  role             Role      @relation(fields: [roleId], references: [id])
+  customer         Customer?
+  driver           Driver?
+  auditLogs        AuditLog[]
+  notifications    Notification[]
+  assignedTrips    TripAssignment[] @relation("AssignedByUser")
+  statusUpdates    TripStatusHistory[]
+  uploadedDocs     ShipmentDocument[] @relation("DocUploader")
+  supportMessages  SupportMessage[]
+}
+
+model Role {
+  id          Int              @id @default(autoincrement())
+  name        String           @unique // ADMIN, OPERATIONS, DISPATCHER, CUSTOMER, DRIVER, FINANCE
+  description String
+  users       User[]
+  permissions RolePermission[]
+}
+
+model Permission {
+  id          Int              @id @default(autoincrement())
+  code        String           @unique // e.g. booking:create, trip:assign
+  module      String           // bookings, trips, fleet, finance, admin
+  description String
+  roles       RolePermission[]
+}
+
+model RolePermission {
+  id           Int        @id @default(autoincrement())
+  roleId       Int
+  permissionId Int
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permissionId])
+}
+
+model Customer {
+  id                 Int       @id @default(autoincrement())
+  userId             Int       @unique
+  customerCode       String    @unique
+  customerType       String    @default("BUSINESS") // INDIVIDUAL, BUSINESS
+  companyName        String?
+  gstin              String?
+  pan                String?
+  billingEmail       String
+  billingPhone       String
+  verificationStatus String    @default("VERIFIED") // PENDING, VERIFIED, REJECTED
+  accountStatus      String    @default("ACTIVE")   // ACTIVE, SUSPENDED
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  user               User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bookings           Booking[]
+  invoices           Invoice[]
+  supportTickets     SupportTicket[]
+  customerAddresses  CustomerAddress[]
+}
+
+model Driver {
+  id                 Int       @id @default(autoincrement())
+  userId             Int       @unique
+  driverCode         String    @unique
+  licenceNumber      String
+  licenceType        String    // HMV, LMV, HEAVY_COMMERCIAL
+  licenceExpiry      DateTime
+  emergencyContact   String
+  verificationStatus String    @default("VERIFIED") // PENDING, VERIFIED, SUSPENDED
+  driverStatus       String    @default("AVAILABLE") // AVAILABLE, ON_TRIP, OFF_DUTY
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  user               User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tripAssignments    TripAssignment[]
+  trackingLocations  TrackingLocation[]
+}
+
+model Transporter {
+  id                 Int       @id @default(autoincrement())
+  transporterCode    String    @unique
+  transporterName    String
+  companyName        String
+  contactDetails     String
+  gstin              String?
+  pan                String?
+  transporterType    String    // OWNED, ATTACHED, THIRD_PARTY
+  verificationStatus String    @default("VERIFIED")
+  accountStatus      String    @default("ACTIVE")
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  vehicles           Vehicle[]
+  tripAssignments    TripAssignment[]
+  settlements        TransporterSettlement[]
+}
+
+model Vehicle {
+  id                 Int       @id @default(autoincrement())
+  transporterId      Int
+  registrationNumber String    @unique
+  vehicleCategory    String    // 32ft MXL, 20ft Container, 14ft Open, 24ft Taurus, Trailer
+  bodyType           String    // CONTAINER, OPEN, FLATBED, REEFER
+  capacityKg         Float
+  lengthFt           Float
+  widthFt            Float
+  heightFt           Float
+  vehicleStatus      String    @default("AVAILABLE") // AVAILABLE, ASSIGNED, ON_TRIP, MAINTENANCE, INACTIVE
+  insuranceExpiry    DateTime
+  fitnessExpiry      DateTime
+  permitExpiry       DateTime
+  pollutionExpiry    DateTime
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  transporter        Transporter @relation(fields: [transporterId], references: [id])
+  tripAssignments    TripAssignment[]
+}
+
+model Address {
+  id         Int               @id @default(autoincrement())
+  line1      String
+  line2      String?
+  city       String
+  state      String
+  postalCode String
+  latitude   Float?
+  longitude  Float?
+  customers  CustomerAddress[]
+}
+
+model CustomerAddress {
+  id          Int      @id @default(autoincrement())
+  customerId  Int
+  addressId   Int
+  addressType String   @default("BILLING") // BILLING, WAREHOUSE, BRANCH
+  customer    Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  address     Address  @relation(fields: [addressId], references: [id], onDelete: Cascade)
+}
+
+model Booking {
+  id                      Int       @id @default(autoincrement())
+  bookingReference        String    @unique // e.g. RNH-BK-2026-0001
+  customerId              Int
+  createdByUserId         Int
+  requestedPickupDate     DateTime
+  preferredDeliveryDate   DateTime
+  goodsDescription        String
+  goodsCategory           String    // INDUSTRIAL, FMCG, AUTOMOTIVE, ELECTRONICS, PHARMACEUTICALS
+  totalWeightKg           Float
+  packageCount            Int
+  cargoValue              Float
+  requiredVehicleCategory String
+  specialInstructions     String?
+  bookingStatus           String    @default("REQUESTED") // DRAFT, REQUESTED, UNDER_REVIEW, QUOTATION_SENT, AWAITING_CUSTOMER_CONFIRMATION, QUOTATION_ACCEPTED, CONFIRMED, REJECTED, CANCELLED, EXPIRED
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+
+  customer                Customer  @relation(fields: [customerId], references: [id])
+  stops                   BookingStop[]
+  items                   BookingItem[]
+  quotations              Quotation[]
+  trip                    Trip?
+  documents               ShipmentDocument[]
+  invoices                Invoice[]
+}
+
+model BookingStop {
+  id               Int       @id @default(autoincrement())
+  bookingId        Int
+  stopType         String    // PICKUP, DELIVERY
+  sequenceNumber   Int       @default(1)
+  contactName      String
+  contactPhone     String
+  addressLine1     String
+  addressLine2     String?
+  city             String
+  state            String
+  postalCode       String
+  latitude         Float?
+  longitude        Float?
+  scheduledArrival DateTime
+  actualArrival    DateTime?
+  actualDeparture  DateTime?
+  instructions     String?
+
+  booking          Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+}
+
+model BookingItem {
+  id                   Int      @id @default(autoincrement())
+  bookingId            Int
+  itemDescription      String
+  packageType          String   // PALLET, WOODEN_CRATE, CARTON, DRUM, BUNDLE
+  quantity             Int
+  unitWeightKg         Float
+  totalWeightKg        Float
+  lengthCm             Float?
+  widthCm              Float?
+  heightCm             Float?
+  declaredValue        Float
+  handlingInstructions String?
+
+  booking              Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+}
+
+model Quotation {
+  id                 Int               @id @default(autoincrement())
+  quotationReference String            @unique // e.g. RNH-QT-2026-0001
+  bookingId          Int
+  versionNumber      Int               @default(1)
+  preparedBy         String
+  baseFreight        Float
+  taxableAmount      Float
+  taxAmount          Float
+  grandTotal         Float
+  currency           String            @default("INR")
+  validUntil         DateTime
+  quotationStatus    String            @default("SENT") // DRAFT, SENT, ACCEPTED, REJECTED, EXPIRED, SUPERSEDED
+  sentAt             DateTime?
+  acceptedAt         DateTime?
+  createdAt          DateTime          @default(now())
+
+  booking            Booking           @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  charges            QuotationCharge[]
+}
+
+model QuotationCharge {
+  id          Int       @id @default(autoincrement())
+  quotationId Int
+  chargeType  String    // BASE_FREIGHT, LOADING, UNLOADING, TOLL, INSURANCE, GREEN_TAX, PACKING
+  description String
+  amount      Float
+  taxable     Boolean   @default(true)
+  taxRate     Float     @default(18.0) // GST 18% or 12%
+
+  quotation   Quotation @relation(fields: [quotationId], references: [id], onDelete: Cascade)
+}
+
+model Trip {
+  id              Int       @id @default(autoincrement())
+  tripReference   String    @unique // e.g. RNH-TR-2026-0001
+  bookingId       Int       @unique
+  tripStatus      String    @default("CREATED") // CREATED, VEHICLE_ASSIGNED, DRIVER_ASSIGNED, AT_PICKUP, LOADING, LOADED, DISPATCHED, IN_TRANSIT, DELAYED, AT_DESTINATION, UNLOADING, DELIVERED, POD_SUBMITTED, COMPLETED, CANCELLED, EXCEPTION
+  plannedPickup   DateTime
+  plannedDelivery DateTime
+  actualPickup    DateTime?
+  actualDelivery  DateTime?
+  createdBy       String
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  booking         Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  assignments     TripAssignment[]
+  statusHistory   TripStatusHistory[]
+  tracking        TrackingLocation[]
+  documents       ShipmentDocument[]
+}
+
+model TripAssignment {
+  id               Int         @id @default(autoincrement())
+  tripId           Int
+  vehicleId        Int
+  driverId         Int
+  transporterId    Int
+  assignedBy       Int
+  assignedAt       DateTime    @default(now())
+  assignmentStatus String      @default("ACTIVE") // ACTIVE, REASSIGNED, CANCELLED
+  unassignedAt     DateTime?
+  createdAt        DateTime    @default(now())
+
+  trip             Trip        @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  vehicle          Vehicle     @relation(fields: [vehicleId], references: [id])
+  driver           Driver      @relation(fields: [driverId], references: [id])
+  transporter      Transporter @relation(fields: [transporterId], references: [id])
+  assigner         User        @relation("AssignedByUser", fields: [assignedBy], references: [id])
+}
+
+model TripStatusHistory {
+  id               Int      @id @default(autoincrement())
+  tripId           Int
+  previousStatus   String
+  newStatus        String
+  updatedByUserId  Int
+  statusNote       String?
+  latitude         Float?
+  longitude        Float?
+  createdAt        DateTime @default(now())
+
+  trip             Trip     @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  updatedBy        User     @relation(fields: [updatedByUserId], references: [id])
+}
+
+model TrackingLocation {
+  id             Int      @id @default(autoincrement())
+  tripId         Int
+  driverId       Int
+  latitude       Float
+  longitude      Float
+  accuracyMeters Float?
+  speed          Float?
+  heading        Float?
+  recordedAt     DateTime @default(now())
+  receivedAt     DateTime @default(now())
+
+  trip           Trip     @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  driver         Driver   @relation(fields: [driverId], references: [id])
+}
+
+model ShipmentDocument {
+  id               Int       @id @default(autoincrement())
+  bookingId        Int
+  tripId           Int?
+  uploadedByUserId Int
+  documentType     String    // LR, POD, EWAY_BILL, LOADING_PHOTO, UNLOADING_PHOTO, INVOICE, TOLL_RECEIPT
+  storageKey       String
+  originalFileName String
+  mimeType         String
+  fileSize         Int
+  documentStatus   String    @default("PENDING_VERIFICATION") // PENDING_VERIFICATION, VERIFIED, REJECTED
+  verifiedBy       String?
+  verifiedAt       DateTime?
+  createdAt        DateTime  @default(now())
+
+  booking          Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  trip             Trip?     @relation(fields: [tripId], references: [id], onDelete: SetNull)
+  uploader         User      @relation("DocUploader", fields: [uploadedByUserId], references: [id])
+}
+
+model Invoice {
+  id            Int           @id @default(autoincrement())
+  invoiceNumber String        @unique // e.g. RNH-INV-2026-0001
+  bookingId     Int
+  customerId    Int
+  invoiceDate   DateTime      @default(now())
+  dueDate       DateTime
+  subtotal      Float
+  taxAmount     Float
+  grandTotal    Float
+  invoiceStatus String        @default("ISSUED") // DRAFT, ISSUED, PARTIALLY_PAID, PAID, OVERDUE, VOID
+  createdAt     DateTime      @default(now())
+
+  booking       Booking       @relation(fields: [bookingId], references: [id])
+  customer      Customer      @relation(fields: [customerId], references: [id])
+  items         InvoiceItem[]
+  payments      Payment[]
+}
+
+model InvoiceItem {
+  id            Int     @id @default(autoincrement())
+  invoiceId     Int
+  description   String
+  quantity      Int     @default(1)
+  unitPrice     Float
+  taxableAmount Float
+  taxRate       Float   @default(18.0)
+  taxAmount     Float
+  lineTotal     Float
+
+  invoice       Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+}
+
+model Payment {
+  id               Int       @id @default(autoincrement())
+  invoiceId        Int
+  receiptReference String    @unique // e.g. RNH-REC-2026-0001
+  amount           Float
+  paymentMethod    String    // NEFT, RTGS, UPI, BANK_TRANSFER, CHEQUE, CASH
+  paymentStatus    String    @default("SUCCESS") // PENDING, SUCCESS, FAILED, REFUNDED, REVERSED
+  gatewayReference String?
+  receivedBy       String
+  paidAt           DateTime  @default(now())
+  createdAt        DateTime  @default(now())
+
+  invoice          Invoice   @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+}
+
+model TransporterSettlement {
+  id            Int         @id @default(autoincrement())
+  transporterId Int
+  tripId        Int
+  amount        Float
+  status        String      @default("PENDING") // PENDING, APPROVED, SETTLED, DISPUTED
+  settledAt     DateTime?
+  createdAt     DateTime    @default(now())
+
+  transporter   Transporter @relation(fields: [transporterId], references: [id])
+}
+
+model Notification {
+  id             Int       @id @default(autoincrement())
+  userId         Int
+  notificationType String  // BOOKING, QUOTATION, DISPATCH, SHIPMENT_STATUS, INVOICE, PAYMENT, SYSTEM
+  channel        String    @default("IN_APP") // IN_APP, EMAIL, SMS, PUSH
+  title          String
+  message        String
+  bookingId      Int?
+  tripId         Int?
+  deliveryStatus String    @default("DELIVERED") // PENDING, DELIVERED, FAILED
+  sentAt         DateTime  @default(now())
+  readAt         DateTime?
+  createdAt      DateTime  @default(now())
+
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model SupportTicket {
+  id               Int              @id @default(autoincrement())
+  customerId       Int
+  bookingReference String?
+  issueCategory    String           // DELAY, DAMAGE, BILLING, TRACKING, GENERAL
+  subject          String
+  description      String
+  priority         String           @default("MEDIUM") // LOW, MEDIUM, HIGH, URGENT
+  status           String           @default("OPEN")   // OPEN, IN_PROGRESS, RESOLVED, CLOSED
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  customer         Customer         @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  messages         SupportMessage[]
+}
+
+model SupportMessage {
+  id            Int           @id @default(autoincrement())
+  ticketId      Int
+  senderUserId  Int
+  message       String
+  attachmentUrl String?
+  createdAt     DateTime      @default(now())
+
+  ticket        SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  sender        User          @relation(fields: [senderUserId], references: [id])
+}
+
+model RouteRate {
+  id              Int      @id @default(autoincrement())
+  sourceCity      String
+  destinationCity String
+  vehicleCategory String
+  baseRate        Float
+  perKmRate       Float
+  minCharge       Float
+  estimatedHours  Float
+  isActive        Boolean  @default(true)
+}
+
+model AuditLog {
+  id           Int      @id @default(autoincrement())
+  actorUserId  Int?
+  action       String   // CREATE, UPDATE, DELETE, STATUS_CHANGE, LOGIN, APPROVE
+  entityType   String   // BOOKING, TRIP, QUOTATION, INVOICE, USER, VEHICLE, DRIVER
+  entityId     String
+  oldValues    String?  // JSON string
+  newValues    String?  // JSON string
+  ipAddress    String?
+  createdAt    DateTime @default(now())
+
+  actor        User?    @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
+}
+
+model ApplicationSetting {
+  id           Int      @id @default(autoincrement())
+  settingKey   String   @unique
+  settingValue String
+  description  String?
+  updatedBy    String?
+  updatedAt    DateTime @updatedAt
+}

@@ -3,1341 +3,1475 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
-  Menu,
-  Bell,
-  Box,
-  Calendar,
-  MapPin,
   FileText,
-  ChevronRight,
-  CheckCircle,
   Truck,
-  Compass,
+  TrendingUp,
   Headphones,
-  Home,
   User,
-  Settings,
-  LogOut,
-  CreditCard,
   Plus,
-  X,
-  Phone,
+  Filter,
   Search,
+  ChevronRight,
+  X,
   Check,
+  CheckCircle,
   Clock,
   ArrowRight,
+  Phone,
   ShieldCheck,
-  RefreshCw,
-  Send,
-  Navigation,
-  Download,
   Eye,
+  Download,
+  RefreshCw,
   AlertCircle,
-  Fuel,
+  MapPin,
+  Building2,
+  Users as UsersIcon,
+  CreditCard,
+  Video,
+  MessageSquare,
+  Send,
+  Calendar,
+  ChevronDown,
+  Navigation,
 } from 'lucide-react';
 import RouteNHLogo from '@/components/RouteNHLogo';
 
-export default function CustomerMobileDashboard() {
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<'home' | 'bookings' | 'track' | 'invoices' | 'support'>('home');
-  const [showQuoteModal, setShowQuoteModal] = useState(false);
-  const [showBookTruckModal, setShowBookTruckModal] = useState(false);
-  const [showNotificationsModal, setShowNotificationsModal] = useState(false);
-  const [showPodModal, setShowPodModal] = useState<any | null>(null);
+export default function RouteNHReplicatedApp() {
+  // Main Navigation: 5 FR8 Tabs
+  const [activeTab, setActiveTab] = useState<'book' | 'trip' | 'rates' | 'support' | 'account'>('book');
 
-  // New Booking state
-  const [pickupCity, setPickupCity] = useState('Chennai');
-  const [deliveryCity, setDeliveryCity] = useState('Bengaluru');
-  const [cargoDesc, setCargoDesc] = useState('Automotive Precision Parts');
-  const [cargoWeight, setCargoWeight] = useState('14500');
-  const [vehicleCat, setVehicleCat] = useState('32ft MXL Container');
-  const [bookingLoading, setBookingLoading] = useState(false);
-  const [bookingSuccessMsg, setBookingSuccessMsg] = useState('');
+  // Sub-tabs
+  const [tripSubTab, setTripSubTab] = useState<'ongoing' | 'pod_pending' | 'pod_received'>('ongoing');
+  const [supportSubTab, setSupportSubTab] = useState<'tickets' | 'chat'>('tickets');
 
-  // Live Tracking state
-  const [selectedTruck, setSelectedTruck] = useState<'Truck 01' | 'Truck 02'>('Truck 01');
+  // Modals & Sheets
+  const [showBookFilter, setShowBookFilter] = useState(false);
+  const [filterActiveTab, setFilterActiveTab] = useState<'users' | 'truck_type'>('truck_type');
+  const [selectedTruckTypes, setSelectedTruckTypes] = useState<string[]>(['32 Feet Multi Axle']);
+
+  const [showBookModal, setShowBookModal] = useState(false);
+  const [showCityPicker, setShowCityPicker] = useState<'from' | 'to' | null>(null);
+  const [showMaterialPicker, setShowMaterialPicker] = useState(false);
+  const [showTimelineSheet, setShowTimelineSheet] = useState(false);
+  const [showPaymentSheet, setShowPaymentSheet] = useState(false);
+  const [showDocumentsSheet, setShowDocumentsSheet] = useState(false);
+  const [showTrackingScreen, setShowTrackingScreen] = useState(false);
+  const [showTripHelpSheet, setShowTripHelpSheet] = useState(false);
+  const [showOrgSheet, setShowOrgSheet] = useState(false);
+  const [showUsersSheet, setShowUsersSheet] = useState(false);
+  const [showAddUserModal, setShowAddUserModal] = useState(false);
+  const [showBalanceSheet, setShowBalanceSheet] = useState(false);
+  const [showPodTrackingSheet, setShowPodTrackingSheet] = useState(false);
+  const [showAccountHelpSheet, setShowAccountHelpSheet] = useState(false);
+
+  // Form states
+  const [fromCity, setFromCity] = useState('Mappedu - Chennai');
+  const [toCity, setToCity] = useState('Vijayawada - Andhra Pradesh');
+  const [materialType, setMaterialType] = useState('Automotive Precision Parts');
+  const [tonnage, setTonnage] = useState('14.5');
+  const [selectedBodyType, setSelectedBodyType] = useState('32 Feet Multi Axle');
+  const [notes, setNotes] = useState('');
+  const [citySearchTerm, setCitySearchTerm] = useState('');
+  const [materialSearchTerm, setMaterialSearchTerm] = useState('');
+
+  // Telemetry & simulator state
   const [telemetry, setTelemetry] = useState<any>(null);
-  const [telemetryLoading, setTelemetryLoading] = useState(false);
-  const [tickSuccess, setTickSuccess] = useState(false);
+  const [isSimulating, setIsSimulating] = useState(false);
 
-  // Bookings & Invoices state
-  const [bookingsList, setBookingsList] = useState<any[]>([]);
-  const [invoicesList, setInvoicesList] = useState<any[]>([]);
-  const [bookingFilter, setBookingFilter] = useState<'ALL' | 'ACTIVE' | 'COMPLETED'>('ALL');
+  // Rates tab states
+  const [rateFrom, setRateFrom] = useState('Chennai');
+  const [rateTo, setRateTo] = useState('Bengaluru');
+  const [rateTonnage, setRateTonnage] = useState('18');
 
-  // Support ticket state
-  const [ticketSubject, setTicketSubject] = useState('');
-  const [ticketCategory, setTicketCategory] = useState('TRACKING');
-  const [ticketDesc, setTicketDesc] = useState('');
-  const [supportTickets, setSupportTickets] = useState<any[]>([
+  // Support ticket form
+  const [newTicketSubject, setNewTicketSubject] = useState('');
+  const [newTicketCategory, setNewTicketCategory] = useState('Tracking & Delay');
+  const [ticketList, setTicketList] = useState<any[]>([
     {
-      id: 1,
-      subject: 'ETA verification for Pune to Gurugram shipment',
-      category: 'TRACKING',
-      status: 'RESOLVED',
-      date: '2026-11-21',
+      id: 'TKT-88912',
+      subject: 'ETA verification for Pune to Gurugram consignment',
+      category: 'Tracking',
+      status: 'OPEN',
+      date: '26 Nov 2026, 02:30 PM',
       reply: 'Vehicle TN-01-AB-1234 cleared Udaipur toll plaza ahead of schedule. On track for on-time delivery.',
+    },
+    {
+      id: 'TKT-88741',
+      subject: 'E-POD stamped copy download verification',
+      category: 'POD Request',
+      status: 'RESOLVED',
+      date: '24 Nov 2026, 11:15 AM',
+      reply: 'Consignee stamped copy uploaded and verified by Operations desk. Available in Documents tab.',
     },
   ]);
 
-  // Load bookings and invoices
-  const loadCustomerData = async () => {
-    try {
-      const [bRes, invRes] = await Promise.all([
-        fetch('/api/v1/customer/bookings'),
-        fetch('/api/v1/customer/invoices'),
-      ]);
-      if (bRes.ok) {
-        const b = await bRes.json();
-        if (b.success && b.data?.length > 0) setBookingsList(b.data);
-      }
-      if (invRes.ok) {
-        const inv = await invRes.json();
-        if (inv.success && inv.data?.length > 0) setInvoicesList(inv.data);
-      }
-    } catch (err) {
-      console.warn('Fallback to local mock state if offline');
-    }
-  };
-
   // Fetch telemetry
-  const fetchTelemetry = async (truck: 'Truck 01' | 'Truck 02') => {
-    setTelemetryLoading(true);
+  const fetchTelemetry = async () => {
     try {
-      const res = await fetch(`/api/v1/gps/telemetry?truck=${encodeURIComponent(truck)}`);
+      const res = await fetch('/api/v1/gps/telemetry?truck=Truck%2001');
       if (res.ok) {
         const json = await res.json();
-        if (json.success && Array.isArray(json.data)) {
-          const match = json.data.find((v: any) => v.truckIdentifier === truck);
-          if (match && match.latestLocation) {
-            setTelemetry(match.latestLocation);
-          }
+        if (json.success && Array.isArray(json.data) && json.data[0]?.latestLocation) {
+          setTelemetry(json.data[0].latestLocation);
         }
       }
-    } catch (err) {
-      console.error('Failed to fetch telemetry', err);
-    } finally {
-      setTelemetryLoading(false);
-    }
-  };
-
-  // Trigger simulated highway telemetry step
-  const handleTriggerSimulatedStep = async () => {
-    setTelemetryLoading(true);
-    try {
-      const res = await fetch(`/api/v1/gps/telemetry?tick=true&truck=${encodeURIComponent(selectedTruck)}`);
-      if (res.ok) {
-        const json = await res.json();
-        if (json.success && json.data) {
-          setTelemetry(json.data);
-          setTickSuccess(true);
-          setTimeout(() => setTickSuccess(false), 3000);
-        }
-      }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setTelemetryLoading(false);
+    } catch {
+      // offline fallback
     }
   };
 
   useEffect(() => {
-    loadCustomerData();
-    fetchTelemetry(selectedTruck);
-  }, [selectedTruck]);
+    fetchTelemetry();
+  }, []);
 
-  // Handle new booking submission
-  const handleSubmitBooking = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setBookingLoading(true);
+  const handleSimulateStep = async () => {
+    setIsSimulating(true);
     try {
-      const res = await fetch('/api/v1/customer/bookings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          requestedPickupDate: new Date().toISOString(),
-          preferredDeliveryDate: new Date(Date.now() + 86400000 * 3).toISOString(),
-          goodsDescription: cargoDesc,
-          goodsCategory: 'AUTOMOTIVE',
-          totalWeightKg: parseFloat(cargoWeight) || 12000,
-          packageCount: 18,
-          cargoValue: 1850000,
-          requiredVehicleCategory: vehicleCat,
-          stops: [
-            {
-              stopType: 'PICKUP',
-              city: pickupCity,
-              state: 'Tamil Nadu',
-              addressLine1: `${pickupCity} Industrial Logistics Zone`,
-              contactName: 'Consignor Desk',
-              contactPhone: '+919876543210',
-            },
-            {
-              stopType: 'DELIVERY',
-              city: deliveryCity,
-              state: 'Karnataka',
-              addressLine1: `${deliveryCity} Central Receiving Hub`,
-              contactName: 'Consignee Manager',
-              contactPhone: '+919840112233',
-            },
-          ],
-        }),
-      });
-
-      const json = await res.json();
-      if (json.success) {
-        setBookingSuccessMsg(`Booking ${json.data.bookingReference} confirmed! Operations will prepare quotation.`);
-        loadCustomerData();
-        setTimeout(() => {
-          setShowBookTruckModal(false);
-          setBookingSuccessMsg('');
-        }, 2000);
-      } else {
-        alert(json.error || 'Failed to submit booking');
+      const res = await fetch('/api/v1/gps/telemetry?tick=true&truck=Truck%2001');
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success) {
+          setTelemetry(json.data);
+        }
       }
-    } catch (err: any) {
-      alert(err.message);
+    } catch (e) {
+      console.error(e);
     } finally {
-      setBookingLoading(false);
+      setIsSimulating(false);
     }
   };
 
-  // Filter bookings
-  const filteredBookings = bookingsList.filter((b) => {
-    if (bookingFilter === 'ACTIVE') return b.bookingStatus === 'CONFIRMED' || b.bookingStatus === 'IN_TRANSIT' || b.bookingStatus === 'REQUESTED';
-    if (bookingFilter === 'COMPLETED') return b.bookingStatus === 'COMPLETED' || b.bookingStatus === 'DELIVERED';
-    return true;
-  });
+  // 21 Truck Types categorized
+  const truckCategories = {
+    Open: [
+      '17 Feet Open',
+      '20 Feet Open',
+      '22 Feet Open',
+      '24 Feet Open',
+      '10 Whl Open',
+      '12 Whl Open',
+      '14 Whl Open',
+      '16 Whl Open',
+      '18 Whl Open',
+    ],
+    Closed: [
+      '32 Feet Single Axle',
+      '32 Feet Single Axle High Cube',
+      '32 Feet Multi Axle',
+      '32 Feet Multi Axle High Cube',
+      '32 Feet Triple Axle',
+      '20 Feet Closed',
+      '22 Feet Closed',
+      '24 Feet Closed',
+    ],
+    Trailer: ['20 Feet Flat Bed', '40 Feet Flat Bed', '40 Feet Semi Bed', '40 Feet Low Bed'],
+  };
+
+  const citiesList = [
+    'Chennai, Tamil Nadu',
+    'Bengaluru, Karnataka',
+    'Pune, Maharashtra',
+    'Mumbai, Maharashtra',
+    'Gurugram, Haryana',
+    'Delhi NCR, Delhi',
+    'Vijayawada, Andhra Pradesh',
+    'Hyderabad, Telangana',
+    'Kolkata, West Bengal',
+    'Coimbatore, Tamil Nadu',
+    'Ahmedabad, Gujarat',
+  ];
+
+  const commodities = [
+    'Agriculture',
+    'Auto Parts',
+    'Automotive Precision Parts',
+    'Bags',
+    'Beverages',
+    'Carton Box / FMCG',
+    'Electronic Goods',
+    'Engineering materials',
+    'FMCG',
+    'Hardware (Door / Windows)',
+    'Industrial Goods',
+    'Packaging Materials',
+    'Plywood',
+    'Textiles',
+    'Others',
+  ];
 
   return (
-    <div className="min-h-screen bg-[#F4F6F9] font-sans antialiased text-slate-800 pb-20 relative">
+    <div className="min-h-screen bg-[#F2F4FD] font-sans antialiased text-slate-800 pb-20 relative selection:bg-blue-100">
       {/* ========================================================= */}
-      {/* 1. TOP APP BAR                                            */}
+      {/* 1. STICKY TOP APP BAR (56.9dp height, #FFFFFF, 1px border)*/}
       {/* ========================================================= */}
-      <header className="sticky top-0 z-40 bg-white border-b border-slate-100 px-4 py-2.5 flex items-center justify-between shadow-xs">
-        <button
-          onClick={() => setDrawerOpen(true)}
-          className="p-1.5 rounded-lg text-slate-700 hover:bg-slate-100 transition-colors"
-          aria-label="Open Navigation Menu"
-        >
-          <Menu className="w-5 h-5" />
-        </button>
+      <header className="sticky top-0 z-40 bg-white border-b border-[#E5E7EF] h-14 px-4 flex items-center justify-between shadow-xs">
+        {/* Left: Screen Title */}
+        <div className="flex items-center space-x-2">
+          <span className="text-base font-extrabold text-[#0B1B36] tracking-tight">
+            {activeTab === 'book' && 'My bookings'}
+            {activeTab === 'trip' && 'Trip'}
+            {activeTab === 'rates' && 'Instant Rates'}
+            {activeTab === 'support' && 'Support'}
+            {activeTab === 'account' && 'Account'}
+          </span>
+        </div>
 
-        <Link href="/" className="flex items-center">
-          <RouteNHLogo size="sm" theme="dark" showTagline={false} />
-        </Link>
+        {/* Right context actions */}
+        <div className="flex items-center space-x-2">
+          {activeTab === 'book' && (
+            <>
+              <button
+                onClick={() => setShowBookModal(true)}
+                className="px-3 py-1 rounded-full border border-[#0067FA] text-[#0067FA] hover:bg-blue-50 text-xs font-bold flex items-center space-x-1 transition-colors shadow-xs"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Book</span>
+              </button>
 
-        <div className="flex items-center space-x-2.5">
-          <button
-            onClick={() => setShowNotificationsModal(true)}
-            className="p-1.5 rounded-full hover:bg-slate-100 relative text-slate-600 transition-colors"
-            aria-label="Notifications"
-          >
-            <Bell className="w-4 h-4" />
-            <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-red-500 text-white text-[8px] font-bold flex items-center justify-center">
-              2
-            </span>
-          </button>
+              <button
+                onClick={() => setShowBookFilter(true)}
+                className="p-2 rounded-lg text-slate-600 hover:bg-slate-100 transition-colors"
+                aria-label="Filter Bookings"
+              >
+                <Filter className="w-4 h-4 text-slate-700" />
+              </button>
+            </>
+          )}
 
-          <button
-            onClick={() => setDrawerOpen(true)}
-            className="w-7 h-7 rounded-full overflow-hidden border border-slate-200 ring-2 ring-slate-100"
-          >
-            <img
-              src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=150&q=80"
-              alt="Priya Sharma"
-              className="w-full h-full object-cover"
-            />
-          </button>
+          {activeTab === 'trip' && (
+            <>
+              <button
+                onClick={() => alert('Search trips by LR, Vehicle or City')}
+                className="p-2 rounded-lg text-slate-600 hover:bg-slate-100 transition-colors"
+              >
+                <Search className="w-4 h-4 text-slate-700" />
+              </button>
+              <button
+                onClick={() => setShowBookFilter(true)}
+                className="p-2 rounded-lg text-slate-600 hover:bg-slate-100 transition-colors"
+              >
+                <Filter className="w-4 h-4 text-slate-700" />
+              </button>
+            </>
+          )}
+
+          {activeTab === 'rates' && (
+            <div className="flex items-center space-x-1.5 text-xs text-slate-500 font-bold">
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-50 text-[#0067FA] font-bold">
+                Owned Fleet
+              </span>
+            </div>
+          )}
+
+          {activeTab === 'account' && (
+            <div className="w-7 h-7 rounded-full bg-[#0067FA] text-white flex items-center justify-center font-bold text-xs">
+              PS
+            </div>
+          )}
         </div>
       </header>
 
       {/* ========================================================= */}
-      {/* 2. MAIN CONTENT AREA (DYNAMIC BY TAB)                      */}
+      {/* 2. TAB BODY (5 TABS ON #F2F4FD CANVAS)                     */}
       {/* ========================================================= */}
-      <main className="max-w-md mx-auto px-4 py-4 space-y-4">
-        {/* TAB 1: HOME */}
-        {activeTab === 'home' && (
-          <div className="space-y-4">
-            {/* Greeting Banner */}
-            <div className="relative rounded-2xl overflow-hidden p-5 text-white shadow-md bg-gradient-to-r from-[#0B1B36] via-[#102A54] to-[#1E3A8A]">
-              <div
-                className="absolute inset-0 bg-cover bg-right opacity-35"
-                style={{
-                  backgroundImage: `url('https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?auto=format&fit=crop&w=800&q=80')`,
-                }}
-              ></div>
-              <div className="relative z-10">
-                <span className="inline-block px-2 py-0.5 rounded-md bg-blue-500/30 text-[10px] font-bold tracking-wider uppercase mb-1.5 border border-blue-400/30">
-                  Route NH Shipper Portal
-                </span>
-                <h2 className="text-xl font-extrabold tracking-tight leading-tight">
-                  Good Morning,<br />
-                  Priya Sharma!
-                </h2>
-                <p className="text-[11px] text-slate-200 mt-1 font-medium">Owned Fleet Logistics. Guaranteed High-Security Transit.</p>
-              </div>
-            </div>
-
-            {/* 4-Item Quick Action Grid */}
-            <div className="grid grid-cols-4 gap-2.5">
-              <button
-                onClick={() => setShowBookTruckModal(true)}
-                className="bg-white p-3 rounded-2xl shadow-xs border border-slate-100 flex flex-col items-center text-center hover:shadow transition-shadow"
-              >
-                <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center mb-1.5 shadow-xs">
-                  <Box className="w-4 h-4" />
-                </div>
-                <span className="text-[11px] font-extrabold text-slate-800 leading-tight">Book a Truck</span>
-              </button>
-
-              <button
-                onClick={() => setActiveTab('bookings')}
-                className="bg-white p-3 rounded-2xl shadow-xs border border-slate-100 flex flex-col items-center text-center hover:shadow transition-shadow"
-              >
-                <div className="w-10 h-10 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center mb-1.5 shadow-xs">
-                  <Calendar className="w-4 h-4" />
-                </div>
-                <span className="text-[11px] font-extrabold text-slate-800 leading-tight">My Bookings</span>
-              </button>
-
-              <button
-                onClick={() => setActiveTab('track')}
-                className="bg-white p-3 rounded-2xl shadow-xs border border-slate-100 flex flex-col items-center text-center hover:shadow transition-shadow"
-              >
-                <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-1.5 shadow-xs">
-                  <MapPin className="w-4 h-4" />
-                </div>
-                <span className="text-[11px] font-extrabold text-slate-800 leading-tight">Track Live</span>
-              </button>
-
-              <button
-                onClick={() => setActiveTab('invoices')}
-                className="bg-white p-3 rounded-2xl shadow-xs border border-slate-100 flex flex-col items-center text-center hover:shadow transition-shadow"
-              >
-                <div className="w-10 h-10 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center mb-1.5 shadow-xs">
-                  <FileText className="w-4 h-4" />
-                </div>
-                <span className="text-[11px] font-extrabold text-slate-800 leading-tight">Invoices</span>
-              </button>
-            </div>
-
-            {/* Active Shipment Section */}
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-black text-[#0B1B36] tracking-tight">Active Consignment</span>
-                <button
-                  onClick={() => setActiveTab('track')}
-                  className="text-[11px] font-bold text-blue-600 hover:underline flex items-center"
-                >
-                  <span>Live Telemetry</span>
-                  <ChevronRight className="w-3.5 h-3.5 ml-0.5" />
-                </button>
-              </div>
-
-              <div
-                onClick={() => setActiveTab('track')}
-                className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs hover:shadow-md transition-shadow cursor-pointer space-y-3"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <span className="px-2 py-0.5 bg-blue-50 text-blue-800 text-[10px] font-black rounded-md border border-blue-200">
-                      Truck 01 (TN-01-AB-1234)
-                    </span>
-                    <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center space-x-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                      <span>IN TRANSIT</span>
-                    </span>
-                  </div>
-                  <span className="text-[10px] font-mono font-bold text-slate-400">RNH-BK-2026-0001</span>
-                </div>
-
-                <div className="flex items-center justify-between text-xs">
-                  <div>
-                    <div className="text-[10px] text-slate-400 uppercase font-black">Origin</div>
-                    <div className="font-extrabold text-slate-900">Pune Plant</div>
-                  </div>
-                  <div className="flex-1 mx-3 flex flex-col items-center">
-                    <span className="text-[9px] font-mono text-blue-600 font-bold mb-1">NH 48 Corridor</span>
-                    <div className="w-full h-1 bg-slate-100 rounded-full relative overflow-hidden">
-                      <div className="absolute left-0 top-0 bottom-0 w-2/3 bg-blue-600 rounded-full"></div>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-[10px] text-slate-400 uppercase font-black">Destination</div>
-                    <div className="font-extrabold text-slate-900">Gurugram Hub</div>
-                  </div>
-                </div>
-
-                <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px]">
-                  <div className="text-slate-500">
-                    Driver: <span className="font-bold text-slate-800">Ramesh Kumar Yadav</span>
-                  </div>
-                  <div className="font-bold text-emerald-600 flex items-center">
-                    <Clock className="w-3 h-3 mr-1" />
-                    <span>ETA: On Time</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Need a Quote Banner */}
-            <div className="relative rounded-2xl overflow-hidden p-4 text-white shadow-sm bg-slate-900">
-              <div
-                className="absolute inset-0 bg-cover bg-center opacity-45"
-                style={{
-                  backgroundImage: `url('https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=600&q=80')`,
-                }}
-              ></div>
-              <div className="relative z-10 flex items-center justify-between">
-                <div>
-                  <h4 className="text-sm font-black">Need Freight Quotation?</h4>
-                  <p className="text-[10px] text-slate-200 mt-0.5 max-w-[190px] leading-snug">
-                    Transparent corridor rates with Route NH owned fleet assurance.
-                  </p>
-                </div>
-                <button
-                  onClick={() => setShowQuoteModal(true)}
-                  className="px-3.5 py-1.5 bg-[#F97316] hover:bg-[#EA580C] text-white rounded-lg text-xs font-bold shadow-md transition-colors"
-                >
-                  Get Quote
-                </button>
-              </div>
-            </div>
-
-            {/* Recent Activity Section */}
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-black text-[#0B1B36] tracking-tight">Recent Activity</span>
-                <button
-                  onClick={() => setActiveTab('bookings')}
-                  className="text-[11px] font-bold text-blue-600 hover:underline flex items-center"
-                >
-                  <span>View All</span>
-                  <ChevronRight className="w-3.5 h-3.5 ml-0.5" />
-                </button>
-              </div>
-
-              <div className="space-y-2">
-                <div className="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center space-x-3">
-                  <div className="w-9 h-9 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center flex-shrink-0">
-                    <CheckCircle className="w-5 h-5 text-emerald-600" />
-                  </div>
-                  <div>
-                    <div className="text-xs font-extrabold text-slate-900">Shipment Delivered & POD Uploaded</div>
-                    <div className="text-[11px] text-slate-500 font-medium">Consignment RNH-BK-2026-0001</div>
-                    <div className="text-[10px] text-slate-400 mt-0.5">Signed POD ready in Documents tab</div>
-                  </div>
-                </div>
-
-                <div className="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center space-x-3">
-                  <div className="w-9 h-9 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0">
-                    <Fuel className="w-5 h-5 text-blue-600" />
-                  </div>
-                  <div>
-                    <div className="text-xs font-extrabold text-slate-900">Truck 01 Toll Cleared</div>
-                    <div className="text-[11px] text-slate-500 font-medium">Vellore Golden Fort Toll Plaza (NH 48)</div>
-                    <div className="text-[10px] text-slate-400 mt-0.5">Speed: 58 km/h • High Accuracy GPS</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* TAB 2: MY BOOKINGS */}
-        {activeTab === 'bookings' && (
+      <main className="max-w-md mx-auto px-3.5 py-3 space-y-3">
+        {/* ======================================================= */}
+        {/* TAB 1: BOOK (SCR-01 MY BOOKINGS)                        */}
+        {/* ======================================================= */}
+        {activeTab === 'book' && (
           <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-base font-extrabold text-[#0B1B36]">Commercial Bookings</h3>
-                <p className="text-[11px] text-slate-500">Track and manage your freight consignments</p>
+            {/* Card 1: Allocated Booking Card matching SCR-01 */}
+            <div
+              onClick={() => setShowTimelineSheet(true)}
+              className="bg-white rounded-xl p-3.5 border border-[#E2E8F0] shadow-xs space-y-2.5 hover:shadow-sm transition-shadow cursor-pointer"
+            >
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-mono font-bold text-slate-900">
+                  #15309639 <span className="text-slate-300 mx-1">|</span> TN-01-AB-1234 (SXL)
+                </span>
+                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-[#0067FA] border border-blue-100">
+                  Allocated
+                </span>
               </div>
-              <button
-                onClick={() => setShowBookTruckModal(true)}
-                className="px-3 py-1.5 bg-[#0B1B36] hover:bg-slate-800 text-white rounded-xl text-xs font-bold flex items-center space-x-1 shadow-sm"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                <span>New Booking</span>
-              </button>
-            </div>
 
-            {/* Filter Tabs */}
-            <div className="flex space-x-1.5 p-1 bg-slate-200/60 rounded-xl text-[11px] font-bold">
-              {(['ALL', 'ACTIVE', 'COMPLETED'] as const).map((f) => (
-                <button
-                  key={f}
-                  onClick={() => setBookingFilter(f)}
-                  className={`flex-1 py-1.5 rounded-lg transition-all ${
-                    bookingFilter === f ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  {f === 'ALL' ? 'All Freight' : f === 'ACTIVE' ? 'Active' : 'Delivered'}
-                </button>
-              ))}
-            </div>
-
-            {/* Bookings List */}
-            <div className="space-y-2.5">
-              {filteredBookings.length === 0 ? (
-                <div className="bg-white p-6 rounded-2xl text-center border border-slate-200">
-                  <Box className="w-8 h-8 mx-auto text-slate-300 mb-2" />
-                  <div className="text-xs font-bold text-slate-600">No bookings found in this category</div>
-                </div>
-              ) : (
-                filteredBookings.map((b) => {
-                  const pickup = b.stops?.find((s: any) => s.stopType === 'PICKUP');
-                  const delivery = b.stops?.find((s: any) => s.stopType === 'DELIVERY');
-                  return (
-                    <div
-                      key={b.id}
-                      className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs space-y-2.5 hover:shadow-sm transition-shadow"
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="font-mono text-xs font-black text-slate-900">{b.bookingReference}</span>
-                        <span
-                          className={`px-2 py-0.5 rounded-full text-[9px] font-bold border ${
-                            b.bookingStatus === 'CONFIRMED' || b.bookingStatus === 'IN_TRANSIT'
-                              ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                              : b.bookingStatus === 'COMPLETED'
-                              ? 'bg-blue-50 text-blue-700 border-blue-200'
-                              : 'bg-amber-50 text-amber-700 border-amber-200'
-                          }`}
-                        >
-                          {b.bookingStatus.replace('_', ' ')}
-                        </span>
-                      </div>
-
-                      <div className="text-xs font-bold text-slate-800 flex items-center">
-                        <span>{pickup?.city || 'Pune'}</span>
-                        <ArrowRight className="w-3.5 h-3.5 mx-2 text-slate-400" />
-                        <span>{delivery?.city || 'Gurugram'}</span>
-                      </div>
-
-                      <div className="text-[11px] text-slate-500 flex items-center justify-between">
-                        <span>{b.goodsDescription}</span>
-                        <span className="font-bold text-slate-700">{b.totalWeightKg.toLocaleString()} kg</span>
-                      </div>
-
-                      <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
-                        <span className="text-[10px] text-slate-400">
-                          Vehicle: <span className="font-bold text-slate-700">{b.requiredVehicleCategory}</span>
-                        </span>
-                        <button
-                          onClick={() => setActiveTab('track')}
-                          className="px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 text-[11px] font-bold hover:bg-blue-100 flex items-center space-x-1"
-                        >
-                          <Compass className="w-3 h-3" />
-                          <span>Track Vehicle</span>
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* TAB 3: LIVE GPS TRACKING */}
-        {activeTab === 'track' && (
-          <div className="space-y-4">
-            {/* Header with Truck Selector */}
-            <div className="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between">
-              <div>
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Live Fleet Telemetry</span>
-                <span className="text-sm font-black text-[#0B1B36]">Physical GPS Highway Tracker</span>
+              <div className="text-[11px] text-slate-500 font-medium">
+                Automotive Precision Parts <span className="text-slate-300 mx-1">•</span> 14.5 Ton{' '}
+                <span className="text-slate-300 mx-1">•</span> 482 KM
               </div>
-              <div className="flex space-x-1 bg-slate-100 p-1 rounded-xl text-xs font-bold">
-                <button
-                  onClick={() => setSelectedTruck('Truck 01')}
-                  className={`px-2.5 py-1 rounded-lg transition-all ${
-                    selectedTruck === 'Truck 01' ? 'bg-[#0B1B36] text-white shadow-xs' : 'text-slate-600'
-                  }`}
-                >
-                  Truck 01
-                </button>
-                <button
-                  onClick={() => setSelectedTruck('Truck 02')}
-                  className={`px-2.5 py-1 rounded-lg transition-all ${
-                    selectedTruck === 'Truck 02' ? 'bg-[#0B1B36] text-white shadow-xs' : 'text-slate-600'
-                  }`}
-                >
-                  Truck 02
-                </button>
-              </div>
-            </div>
 
-            {/* Truck Details & Telemetry Specs Card */}
-            <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs space-y-3">
-              <div className="flex items-center justify-between">
-                <div>
+              <div className="flex items-center justify-between text-xs pt-1">
+                <div className="space-y-1">
                   <div className="flex items-center space-x-2">
-                    <span className="font-black text-sm text-slate-900">{selectedTruck}</span>
-                    <span className="font-mono text-xs font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
-                      {selectedTruck === 'Truck 01' ? 'TN-01-AB-1234' : 'TN-02-CD-5678'}
-                    </span>
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 flex-shrink-0"></span>
+                    <span className="font-bold text-slate-900">Mappedu - Chennai</span>
                   </div>
-                  <div className="text-[11px] text-slate-500 mt-0.5">
-                    {selectedTruck === 'Truck 01' ? '32ft MXL Container (24 Ton)' : '20ft Multi-Axle Open (15 Ton)'}
+                  <div className="flex items-center space-x-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-amber-500 flex-shrink-0"></span>
+                    <span className="font-bold text-slate-900">Vijayawada Hub</span>
                   </div>
                 </div>
 
                 <div className="text-right">
-                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1 animate-pulse"></span>
-                    ONLINE
-                  </span>
-                  <div className="text-[9px] text-slate-400 mt-0.5">Battery: 98%</div>
+                  <div className="text-sm font-extrabold text-[#0B1B36]">₹39,800</div>
+                  <div className="text-[9px] text-slate-400">Total Freight</div>
                 </div>
               </div>
 
-              {/* Highway Corridor Map Visualizer */}
-              <div className="relative h-48 w-full rounded-xl overflow-hidden bg-[#0A192F] border border-slate-700 p-3 flex flex-col justify-between text-white">
-                {/* Simulated Road Graphic SVG */}
-                <svg className="absolute inset-0 w-full h-full opacity-60" viewBox="0 0 400 200" preserveAspectRatio="none">
-                  <path
-                    d="M 20 180 Q 150 40, 380 30"
-                    fill="none"
-                    stroke="#1E3A8A"
-                    strokeWidth="24"
-                    strokeLinecap="round"
-                  />
-                  <path
-                    d="M 20 180 Q 150 40, 380 30"
-                    fill="none"
-                    stroke="#0866D8"
-                    strokeWidth="18"
-                    strokeLinecap="round"
-                  />
-                  <path
-                    d="M 20 180 Q 150 40, 380 30"
-                    fill="none"
-                    stroke="#FFFFFF"
-                    strokeWidth="2"
-                    strokeDasharray="8 8"
-                    strokeLinecap="round"
-                  />
-                  {/* Moving truck marker */}
-                  <circle cx="210" cy="85" r="9" fill="#F97316" stroke="#FFFFFF" strokeWidth="2" />
-                  <circle cx="210" cy="85" r="15" fill="#F97316" opacity="0.3" className="animate-ping" />
-                </svg>
+              <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    alert('Booking #15309639 confirmed! Vehicle dispatch initiated.');
+                  }}
+                  className="w-full py-2 bg-white border border-[#002F70] text-[#002F70] hover:bg-slate-50 font-bold rounded-lg text-xs flex items-center justify-center space-x-1.5 transition-colors"
+                >
+                  <Truck className="w-3.5 h-3.5" />
+                  <span>Confirm booking</span>
+                </button>
+              </div>
+            </div>
 
-                <div className="relative z-10 flex items-center justify-between text-[11px]">
-                  <span className="font-mono bg-black/60 px-2 py-0.5 rounded font-bold text-blue-300">
-                    {selectedTruck === 'Truck 01' ? 'Corridor: NH 48 (Chennai ↔ Mumbai)' : 'Corridor: NH 44 (Delhi ↔ Bengaluru)'}
-                  </span>
-                  <span className="bg-emerald-500/30 text-emerald-300 border border-emerald-400/30 px-2 py-0.5 rounded text-[10px] font-bold flex items-center">
-                    <Navigation className="w-3 h-3 mr-1" />
-                    {telemetry?.speed ? `${telemetry.speed} km/h` : '58 km/h'}
-                  </span>
-                </div>
+            {/* Card 2: In-Transit Trip Card */}
+            <div
+              onClick={() => setShowTimelineSheet(true)}
+              className="bg-white rounded-xl p-3.5 border border-[#E2E8F0] shadow-xs space-y-2.5 hover:shadow-sm transition-shadow cursor-pointer"
+            >
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-mono font-bold text-slate-900">
+                  #15309640 <span className="text-slate-300 mx-1">|</span> TN-02-CD-5678 (20ft Open)
+                </span>
+                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-100 flex items-center space-x-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                  <span>Intransit</span>
+                </span>
+              </div>
 
-                <div className="relative z-10 bg-slate-900/90 backdrop-blur-xs p-2.5 rounded-lg border border-slate-700 text-xs">
-                  <div className="flex items-center justify-between text-[10px] text-slate-300 mb-1">
-                    <span>Current Coordinates</span>
-                    <span className="font-mono text-emerald-400">
-                      {telemetry?.latitude ? `${telemetry.latitude}° N, ${telemetry.longitude}° E` : '18.6298° N, 73.7997° E'}
-                    </span>
+              <div className="text-[11px] text-slate-500 font-medium">
+                Industrial Raw Materials <span className="text-slate-300 mx-1">•</span> 12.0 Ton{' '}
+                <span className="text-slate-300 mx-1">•</span> 345 KM
+              </div>
+
+              <div className="flex items-center justify-between text-xs pt-1">
+                <div className="space-y-1">
+                  <div className="flex items-center space-x-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 flex-shrink-0"></span>
+                    <span className="font-bold text-slate-900">Chennai Port Terminal</span>
                   </div>
-                  <div className="flex items-center justify-between text-[10px] text-slate-300">
-                    <span>AIS-140 GPS Device</span>
-                    <span className="font-mono text-blue-300 font-bold">
-                      {selectedTruck === 'Truck 01' ? 'Teltonika FMB920' : 'Concox GT06N'}
-                    </span>
+                  <div className="flex items-center space-x-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-amber-500 flex-shrink-0"></span>
+                    <span className="font-bold text-slate-900">Bengaluru Nelamangala</span>
                   </div>
                 </div>
-              </div>
 
-              {/* Informational Pill about Simulation / Hardware */}
-              <div className="p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-[11px] flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0" />
-                  <span>
-                    Hardware Ready • <span className="font-bold">Test Mode Highway Simulator Active</span>
-                  </span>
+                <div className="text-right">
+                  <div className="text-sm font-extrabold text-[#0B1B36]">₹28,500</div>
+                  <div className="text-[9px] text-slate-400">Total Freight</div>
                 </div>
               </div>
 
-              {/* Simulate Next Step Button */}
+              <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowTrackingScreen(true);
+                  }}
+                  className="w-full py-2 bg-blue-50 text-[#0067FA] hover:bg-blue-100 font-bold rounded-lg text-xs flex items-center justify-center space-x-1.5 transition-colors border border-blue-200"
+                >
+                  <Navigation className="w-3.5 h-3.5" />
+                  <span>Track Live GPS & Tolls</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Card 3: Expired Card matching SCR-03 */}
+            <div className="bg-white rounded-xl p-3.5 border border-[#E2E8F0] shadow-xs space-y-2.5">
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-mono font-bold text-slate-900">
+                  #15272934 <span className="text-slate-300 mx-1">|</span> 20 FEET CLOSED
+                </span>
+                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-red-50 text-red-600 border border-red-100 flex items-center space-x-1">
+                  <Clock className="w-3 h-3 mr-0.5" />
+                  <span>Expired</span>
+                </span>
+              </div>
+
+              <div className="text-[11px] text-slate-500 font-medium">
+                FMCG Goods <span className="text-slate-300 mx-1">•</span> 7 Ton{' '}
+                <span className="text-slate-300 mx-1">•</span> 515 KM
+              </div>
+
+              <div className="flex items-center justify-between text-xs pt-1">
+                <div className="space-y-1">
+                  <div className="flex items-center space-x-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-slate-400 flex-shrink-0"></span>
+                    <span className="font-medium text-slate-700">Chennai</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-slate-400 flex-shrink-0"></span>
+                    <span className="font-medium text-slate-700">Coimbatore</span>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => setShowBookModal(true)}
+                  className="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg text-xs font-bold flex items-center space-x-1"
+                >
+                  <RefreshCw className="w-3 h-3 mr-1" />
+                  <span>Re-book</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ======================================================= */}
+        {/* TAB 2: TRIP (SCR-10 TRIP LIST)                          */}
+        {/* ======================================================= */}
+        {activeTab === 'trip' && (
+          <div className="space-y-3">
+            {/* 3 Sub-tabs matching SCR-10 */}
+            <div className="flex space-x-1 bg-white p-1 rounded-xl border border-slate-200 text-xs font-bold shadow-xs">
               <button
-                onClick={handleTriggerSimulatedStep}
-                disabled={telemetryLoading}
-                className="w-full py-2.5 bg-[#0B1B36] hover:bg-slate-800 text-white rounded-xl text-xs font-bold flex items-center justify-center space-x-2 shadow-sm transition-all"
+                onClick={() => setTripSubTab('ongoing')}
+                className={`flex-1 py-1.5 rounded-lg text-center transition-all ${
+                  tripSubTab === 'ongoing' ? 'bg-[#0067FA] text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                }`}
               >
-                <RefreshCw className={`w-3.5 h-3.5 ${telemetryLoading ? 'animate-spin' : ''}`} />
-                <span>Simulate Next Highway Telemetry Step</span>
+                Ongoing (1)
               </button>
-              {tickSuccess && (
-                <div className="text-center text-[10px] font-bold text-emerald-600 animate-fadeIn">
-                  ✓ Telemetry advanced along {selectedTruck === 'Truck 01' ? 'NH 48' : 'NH 44'} corridor!
-                </div>
-              )}
-            </div>
-
-            {/* Assigned Driver Profile Card */}
-            <div className="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="w-11 h-11 rounded-full bg-slate-100 overflow-hidden border border-slate-200">
-                  <img
-                    src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80"
-                    alt="Driver"
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <div>
-                  <div className="text-xs font-black text-slate-900">
-                    {selectedTruck === 'Truck 01' ? 'Ramesh Kumar Yadav' : 'Suresh Gurjar'}
-                  </div>
-                  <div className="text-[11px] text-slate-500 font-medium">Commercial Driver • HMV Certified</div>
-                  <div className="text-[10px] text-emerald-600 font-bold mt-0.5">Rating: 4.9 ★ (180+ trips)</div>
-                </div>
-              </div>
-
-              <a
-                href="tel:+919810066006"
-                className="w-9 h-9 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-200 flex items-center justify-center hover:bg-emerald-100 transition-colors"
-                aria-label="Call Driver"
+              <button
+                onClick={() => setTripSubTab('pod_pending')}
+                className={`flex-1 py-1.5 rounded-lg text-center transition-all ${
+                  tripSubTab === 'pod_pending'
+                    ? 'bg-[#0067FA] text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
               >
-                <Phone className="w-4 h-4" />
-              </a>
+                POD Pending (1)
+              </button>
+              <button
+                onClick={() => setTripSubTab('pod_received')}
+                className={`flex-1 py-1.5 rounded-lg text-center transition-all ${
+                  tripSubTab === 'pod_received'
+                    ? 'bg-[#0067FA] text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                POD Received (1)
+              </button>
             </div>
-          </div>
-        )}
 
-        {/* TAB 4: INVOICES & POD */}
-        {activeTab === 'invoices' && (
-          <div className="space-y-3">
-            <div>
-              <h3 className="text-base font-extrabold text-[#0B1B36]">GST Invoices & Proof of Delivery</h3>
-              <p className="text-[11px] text-slate-500">Tax compliance with 18% GST (SAC Code: 9965)</p>
-            </div>
-
-            {/* Invoices List */}
+            {/* Trip Cards */}
             <div className="space-y-3">
-              {invoicesList.length === 0 ? (
-                /* Pre-seeded demo invoice representation */
-                <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <span className="font-mono text-xs font-black text-slate-900">RNH-INV-2026-0001</span>
-                      <div className="text-[10px] text-slate-400 mt-0.5">Issued: 23 Nov 2026</div>
-                    </div>
-                    <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                      PAID
-                    </span>
-                  </div>
-
-                  <div className="text-xs space-y-1 bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-                    <div className="flex justify-between text-slate-600">
-                      <span>Freight & Handling (Pune → Gurugram)</span>
-                      <span>₹72,000.00</span>
-                    </div>
-                    <div className="flex justify-between text-slate-600">
-                      <span>Tolls & Green Tax</span>
-                      <span>₹4,500.00</span>
-                    </div>
-                    <div className="flex justify-between text-slate-600">
-                      <span>GST @ 18%</span>
-                      <span>₹13,770.00</span>
-                    </div>
-                    <div className="pt-1.5 border-t border-slate-200 flex justify-between font-black text-slate-900">
-                      <span>Grand Total</span>
-                      <span className="text-[#0B1B36]">₹90,270.00</span>
-                    </div>
-                  </div>
-
-                  <div className="flex space-x-2 pt-1">
-                    <button
-                      onClick={() =>
-                        setShowPodModal({
-                          type: 'POD',
-                          ref: 'RNH-BK-2026-0001',
-                          file: 'LorryReceipt_Pune_Gurugram_001.pdf',
-                          verifiedBy: 'Rajesh Nair (Operations Manager)',
-                        })
-                      }
-                      className="flex-1 py-2 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-xl text-xs font-bold flex items-center justify-center space-x-1 border border-blue-200"
-                    >
-                      <Eye className="w-3.5 h-3.5" />
-                      <span>View Signed POD</span>
-                    </button>
-                    <button
-                      onClick={() => alert('Downloading official GST Tax Invoice PDF')}
-                      className="flex-1 py-2 bg-[#0B1B36] text-white hover:bg-slate-800 rounded-xl text-xs font-bold flex items-center justify-center space-x-1"
-                    >
-                      <Download className="w-3.5 h-3.5" />
-                      <span>Download Tax Invoice</span>
-                    </button>
-                  </div>
+              <div className="bg-white rounded-xl p-3.5 border border-[#E2E8F0] shadow-xs space-y-3">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-mono font-bold text-slate-900">
+                    #RNH-TR-2026-0001 <span className="text-slate-300 mx-1">|</span> TN-01-AB-1234
+                  </span>
+                  <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    {tripSubTab === 'ongoing'
+                      ? 'Intransit'
+                      : tripSubTab === 'pod_pending'
+                      ? 'Delivered'
+                      : 'POD Verified'}
+                  </span>
                 </div>
-              ) : (
-                invoicesList.map((inv) => (
-                  <div key={inv.id} className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="font-mono text-xs font-black text-slate-900">{inv.invoiceNumber}</span>
-                      <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                        {inv.invoiceStatus}
-                      </span>
-                    </div>
-                    <div className="text-xs flex justify-between font-bold">
-                      <span>Grand Total</span>
-                      <span>₹{inv.grandTotal.toLocaleString()}</span>
-                    </div>
-                  </div>
-                ))
-              )}
+
+                <div className="text-xs font-bold text-slate-900 flex items-center justify-between">
+                  <span>Pune Pimpri Plant Gate 4 → Gurugram Warehouse 9</span>
+                  <button
+                    onClick={() => setShowTimelineSheet(true)}
+                    className="text-[#0067FA] hover:underline text-[11px] font-bold"
+                  >
+                    Show more
+                  </button>
+                </div>
+
+                {/* 4 Action Buttons matching SCR-11 */}
+                <div className="grid grid-cols-4 gap-2 pt-1 border-t border-slate-100">
+                  <button
+                    onClick={() => setShowPaymentSheet(true)}
+                    className="py-1.5 bg-slate-50 hover:bg-slate-100 rounded-lg text-[11px] font-bold text-slate-700 flex flex-col items-center border border-slate-200"
+                  >
+                    <CreditCard className="w-3.5 h-3.5 mb-1 text-slate-600" />
+                    <span>Payments</span>
+                  </button>
+
+                  <button
+                    onClick={() => setShowDocumentsSheet(true)}
+                    className="py-1.5 bg-slate-50 hover:bg-slate-100 rounded-lg text-[11px] font-bold text-slate-700 flex flex-col items-center border border-slate-200"
+                  >
+                    <FileText className="w-3.5 h-3.5 mb-1 text-slate-600" />
+                    <span>Documents</span>
+                  </button>
+
+                  <button
+                    onClick={() => setShowTrackingScreen(true)}
+                    className="py-1.5 bg-blue-50 hover:bg-blue-100 rounded-lg text-[11px] font-bold text-[#0067FA] flex flex-col items-center border border-blue-200"
+                  >
+                    <Navigation className="w-3.5 h-3.5 mb-1 text-[#0067FA]" />
+                    <span>Tracking</span>
+                  </button>
+
+                  <button
+                    onClick={() => setShowTripHelpSheet(true)}
+                    className="py-1.5 bg-slate-50 hover:bg-slate-100 rounded-lg text-[11px] font-bold text-slate-700 flex flex-col items-center border border-slate-200"
+                  >
+                    <Headphones className="w-3.5 h-3.5 mb-1 text-slate-600" />
+                    <span>Help</span>
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         )}
 
-        {/* TAB 5: SUPPORT */}
-        {activeTab === 'support' && (
+        {/* ======================================================= */}
+        {/* TAB 3: RATES (SCR-20 INSTANT MARKET RATES)              */}
+        {/* ======================================================= */}
+        {activeTab === 'rates' && (
           <div className="space-y-3">
-            <div>
-              <h3 className="text-base font-extrabold text-[#0B1B36]">Customer Support & Helpdesk</h3>
-              <p className="text-[11px] text-slate-500">Direct contact with Route NH Operations</p>
-            </div>
+            <div className="bg-white rounded-xl p-4 border border-[#E2E8F0] shadow-xs space-y-3">
+              <h3 className="font-extrabold text-sm text-[#0B1B36]">Corridor Rate Calculator</h3>
+              <p className="text-[11px] text-slate-500">Transparent freight rates for Route NH owned vehicle fleet</p>
 
-            {/* Helpline Card */}
-            <div className="bg-[#0B1B36] text-white p-4 rounded-2xl shadow-sm space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-blue-300">24/7 Fleet Operations Desk</span>
-                <span className="text-[9px] bg-emerald-500/30 text-emerald-300 px-2 py-0.5 rounded">Toll Free</span>
-              </div>
-              <div className="text-lg font-black tracking-tight">+91 11 4050 9000</div>
-              <div className="text-[11px] text-slate-300">operations@routenh.com</div>
-            </div>
-
-            {/* Raise New Ticket Card */}
-            <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs space-y-3">
-              <h4 className="text-xs font-black text-slate-900">Create Support Ticket</h4>
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  if (!ticketSubject) return;
-                  setSupportTickets([
-                    {
-                      id: Date.now(),
-                      subject: ticketSubject,
-                      category: ticketCategory,
-                      status: 'OPEN',
-                      date: new Date().toISOString().split('T')[0],
-                      reply: 'Ticket acknowledged by Operations Desk. An executive is reviewing your request.',
-                    },
-                    ...supportTickets,
-                  ]);
-                  setTicketSubject('');
-                  setTicketDesc('');
-                  alert('Support ticket submitted successfully!');
-                }}
-                className="space-y-2.5 text-xs"
-              >
+              <div className="space-y-2 text-xs">
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-700 mb-1">Subject</label>
+                  <label className="block text-[11px] font-bold text-slate-700 mb-1">Source City (From)</label>
                   <input
                     type="text"
-                    required
-                    value={ticketSubject}
-                    onChange={(e) => setTicketSubject(e.target.value)}
-                    placeholder="e.g. ETA update request"
+                    value={rateFrom}
+                    onChange={(e) => setRateFrom(e.target.value)}
                     className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs"
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-700 mb-1">Issue Category</label>
-                  <select
-                    value={ticketCategory}
-                    onChange={(e) => setTicketCategory(e.target.value)}
+                  <label className="block text-[11px] font-bold text-slate-700 mb-1">Destination City (To)</label>
+                  <input
+                    type="text"
+                    value={rateTo}
+                    onChange={(e) => setRateTo(e.target.value)}
                     className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs"
-                  >
-                    <option value="TRACKING">Transit & Tracking</option>
-                    <option value="DELAY">Schedule Delay</option>
-                    <option value="POD">POD Copy Request</option>
-                    <option value="BILLING">Billing & GST</option>
-                  </select>
+                  />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-700 mb-1">Description</label>
-                  <textarea
-                    rows={2}
-                    value={ticketDesc}
-                    onChange={(e) => setTicketDesc(e.target.value)}
-                    placeholder="Provide details..."
+                  <label className="block text-[11px] font-bold text-slate-700 mb-1">Tonnage (MT)</label>
+                  <input
+                    type="number"
+                    value={rateTonnage}
+                    onChange={(e) => setRateTonnage(e.target.value)}
                     className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs"
-                  ></textarea>
+                  />
                 </div>
-                <button
-                  type="submit"
-                  className="w-full py-2 bg-[#0B1B36] hover:bg-slate-800 text-white rounded-lg font-bold flex items-center justify-center space-x-1"
-                >
-                  <Send className="w-3.5 h-3.5" />
-                  <span>Submit Ticket</span>
-                </button>
-              </form>
+              </div>
+
+              {/* Rate Breakdown Card */}
+              <div className="bg-[#F2F4FD] p-3 rounded-xl border border-blue-100 text-xs space-y-1.5">
+                <div className="flex justify-between text-slate-600">
+                  <span>Base Freight (345 km)</span>
+                  <span className="font-bold text-slate-900">₹28,500</span>
+                </div>
+                <div className="flex justify-between text-slate-600">
+                  <span>Loading & Handling</span>
+                  <span className="font-bold text-slate-900">₹2,000</span>
+                </div>
+                <div className="flex justify-between text-slate-600">
+                  <span>Fastag National Highway Toll</span>
+                  <span className="font-bold text-slate-900">₹1,800</span>
+                </div>
+                <div className="flex justify-between text-slate-600">
+                  <span>GST (18% SAC 9965)</span>
+                  <span className="font-bold text-slate-900">₹5,814</span>
+                </div>
+                <div className="pt-1.5 border-t border-slate-300 flex justify-between font-black text-sm text-[#0B1B36]">
+                  <span>Estimated Total</span>
+                  <span className="text-[#0067FA]">₹38,114</span>
+                </div>
+              </div>
+
+              <button
+                onClick={() => {
+                  setFromCity(rateFrom);
+                  setToCity(rateTo);
+                  setShowBookModal(true);
+                }}
+                className="w-full py-2.5 bg-[#002F70] text-white font-bold rounded-lg text-xs shadow hover:bg-slate-800 transition-colors"
+              >
+                Book at this Rate
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ======================================================= */}
+        {/* TAB 4: SUPPORT (SCR-22 TICKETS & CHAT)                   */}
+        {/* ======================================================= */}
+        {activeTab === 'support' && (
+          <div className="space-y-3">
+            <div className="flex space-x-1 bg-white p-1 rounded-xl border border-slate-200 text-xs font-bold shadow-xs">
+              <button
+                onClick={() => setSupportSubTab('tickets')}
+                className={`flex-1 py-1.5 rounded-lg text-center transition-all ${
+                  supportSubTab === 'tickets' ? 'bg-[#0067FA] text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Tickets ({ticketList.length})
+              </button>
+              <button
+                onClick={() => setSupportSubTab('chat')}
+                className={`flex-1 py-1.5 rounded-lg text-center transition-all ${
+                  supportSubTab === 'chat' ? 'bg-[#0067FA] text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Live Chat
+              </button>
             </div>
 
-            {/* Tickets History */}
-            <div className="space-y-2">
-              <span className="text-xs font-black text-slate-900 block">Your Past Inquiries</span>
-              {supportTickets.map((t) => (
-                <div key={t.id} className="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs space-y-1.5 text-xs">
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-slate-900">{t.subject}</span>
-                    <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
-                      {t.status}
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-slate-600 bg-slate-50 p-2 rounded-lg border border-slate-100">
-                    <span className="font-bold text-blue-700">Route NH Desk:</span> {t.reply}
-                  </p>
-                  <div className="text-[9px] text-slate-400">{t.date}</div>
+            {supportSubTab === 'tickets' && (
+              <div className="space-y-3">
+                {/* Raise Ticket Form */}
+                <div className="bg-white rounded-xl p-3.5 border border-[#E2E8F0] shadow-xs space-y-2 text-xs">
+                  <h4 className="font-bold text-slate-900">Raise New Ticket</h4>
+                  <input
+                    type="text"
+                    placeholder="Subject (e.g. ETA update request)"
+                    value={newTicketSubject}
+                    onChange={(e) => setNewTicketSubject(e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs"
+                  />
+                  <select
+                    value={newTicketCategory}
+                    onChange={(e) => setNewTicketCategory(e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs"
+                  >
+                    <option value="Tracking & Delay">Tracking & Transit Delay</option>
+                    <option value="POD Request">POD & LR Copy Request</option>
+                    <option value="Billing & GST">Billing & GST Invoice</option>
+                    <option value="Vehicle Issue">Vehicle Breakdown or Issue</option>
+                  </select>
+                  <button
+                    onClick={() => {
+                      if (!newTicketSubject) return;
+                      setTicketList([
+                        {
+                          id: `TKT-${Math.floor(10000 + Math.random() * 90000)}`,
+                          subject: newTicketSubject,
+                          category: newTicketCategory,
+                          status: 'OPEN',
+                          date: 'Just now',
+                          reply: 'Ticket acknowledged by Route NH Operations Desk. An executive is reviewing.',
+                        },
+                        ...ticketList,
+                      ]);
+                      setNewTicketSubject('');
+                      alert('Support ticket created!');
+                    }}
+                    className="w-full py-2 bg-[#002F70] text-white font-bold rounded-lg text-xs"
+                  >
+                    Submit Support Ticket
+                  </button>
                 </div>
-              ))}
+
+                {/* Ticket Cards */}
+                {ticketList.map((t) => (
+                  <div key={t.id} className="bg-white rounded-xl p-3.5 border border-[#E2E8F0] shadow-xs space-y-1.5 text-xs">
+                    <div className="flex items-center justify-between">
+                      <span className="font-mono font-bold text-slate-900">{t.id}</span>
+                      <span
+                        className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                          t.status === 'OPEN'
+                            ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                            : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                        }`}
+                      >
+                        {t.status}
+                      </span>
+                    </div>
+                    <div className="font-extrabold text-slate-800">{t.subject}</div>
+                    <div className="text-[11px] text-slate-500 bg-slate-50 p-2 rounded border border-slate-100">
+                      <span className="font-bold text-blue-700">Operations Desk:</span> {t.reply}
+                    </div>
+                    <div className="text-[10px] text-slate-400">{t.date}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {supportSubTab === 'chat' && (
+              <div className="bg-white rounded-xl p-4 border border-[#E2E8F0] shadow-xs space-y-3 text-xs">
+                <div className="bg-[#F2F4FD] p-3 rounded-lg border border-blue-100 flex items-center justify-between">
+                  <div>
+                    <div className="font-bold text-slate-900">Traffic Controller (Chennai)</div>
+                    <div className="text-[10px] text-slate-500">Route NH Central Fleet Management</div>
+                  </div>
+                  <a
+                    href="tel:+911140509000"
+                    className="px-2.5 py-1 bg-emerald-600 text-white rounded font-bold text-[10px] flex items-center space-x-1"
+                  >
+                    <Phone className="w-3 h-3" />
+                    <span>Call Desk</span>
+                  </a>
+                </div>
+
+                <div className="h-48 overflow-y-auto space-y-2 p-2 bg-slate-50 rounded-lg border border-slate-100">
+                  <div className="bg-white p-2.5 rounded-lg border border-slate-200 max-w-[85%] text-slate-700">
+                    Hello Priya! Your shipment #15309639 has cleared Krishnagiri and is proceeding on NH 48 corridor as scheduled.
+                  </div>
+                </div>
+
+                <div className="flex space-x-1.5">
+                  <input
+                    type="text"
+                    placeholder="Type message to Operations Desk..."
+                    className="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-xs"
+                  />
+                  <button className="px-3 py-2 bg-[#0067FA] text-white rounded-lg font-bold">
+                    <Send className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ======================================================= */}
+        {/* TAB 5: ACCOUNT (SCR-23 ACCOUNT HUB)                     */}
+        {/* ======================================================= */}
+        {activeTab === 'account' && (
+          <div className="space-y-3">
+            {/* Profile Card matching SCR-23 */}
+            <div className="bg-white rounded-xl p-4 border border-[#E2E8F0] shadow-xs flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="w-12 h-12 rounded-full bg-[#0067FA] text-white flex items-center justify-center font-extrabold text-base">
+                  PS
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-sm text-[#0B1B36]">Priya Sharma</h3>
+                  <div className="text-[11px] text-slate-500">Tata Motors Parts Distribution Division</div>
+                  <div className="text-[10px] text-slate-400 mt-0.5">+91 98765 43210</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Menu List matching SCR-23 */}
+            <div className="bg-white rounded-xl border border-[#E2E8F0] shadow-xs divide-y divide-slate-100 text-xs">
+              <div
+                onClick={() => setShowOrgSheet(true)}
+                className="p-3.5 flex items-center justify-between hover:bg-slate-50 cursor-pointer"
+              >
+                <div className="flex items-center space-x-3">
+                  <Building2 className="w-4 h-4 text-slate-500" />
+                  <span className="font-bold text-slate-800">Organization details</span>
+                </div>
+                <ChevronRight className="w-4 h-4 text-slate-400" />
+              </div>
+
+              <div
+                onClick={() => setShowUsersSheet(true)}
+                className="p-3.5 flex items-center justify-between hover:bg-slate-50 cursor-pointer"
+              >
+                <div className="flex items-center space-x-3">
+                  <UsersIcon className="w-4 h-4 text-slate-500" />
+                  <span className="font-bold text-slate-800">Users management</span>
+                </div>
+                <ChevronRight className="w-4 h-4 text-slate-400" />
+              </div>
+
+              <div
+                onClick={() => setShowBalanceSheet(true)}
+                className="p-3.5 flex items-center justify-between hover:bg-slate-50 cursor-pointer"
+              >
+                <div className="flex items-center space-x-3">
+                  <CreditCard className="w-4 h-4 text-slate-500" />
+                  <span className="font-bold text-slate-800">Account balance & Top-up</span>
+                </div>
+                <ChevronRight className="w-4 h-4 text-slate-400" />
+              </div>
+
+              <div
+                onClick={() => setShowPodTrackingSheet(true)}
+                className="p-3.5 flex items-center justify-between hover:bg-slate-50 cursor-pointer"
+              >
+                <div className="flex items-center space-x-3">
+                  <Search className="w-4 h-4 text-slate-500" />
+                  <span className="font-bold text-slate-800">POD & Truck tracking lookup</span>
+                </div>
+                <ChevronRight className="w-4 h-4 text-slate-400" />
+              </div>
+
+              <div
+                onClick={() => setShowAccountHelpSheet(true)}
+                className="p-3.5 flex items-center justify-between hover:bg-slate-50 cursor-pointer"
+              >
+                <div className="flex items-center space-x-3">
+                  <Headphones className="w-4 h-4 text-slate-500" />
+                  <span className="font-bold text-slate-800">Help & 24/7 Operations call</span>
+                </div>
+                <ChevronRight className="w-4 h-4 text-slate-400" />
+              </div>
+
+              <Link
+                href="/login"
+                className="p-3.5 flex items-center justify-between hover:bg-red-50 text-red-600 font-bold cursor-pointer"
+              >
+                <div className="flex items-center space-x-3">
+                  <X className="w-4 h-4 text-red-600" />
+                  <span>Logout</span>
+                </div>
+                <ChevronRight className="w-4 h-4 text-red-400" />
+              </Link>
             </div>
           </div>
         )}
       </main>
 
       {/* ========================================================= */}
-      {/* 3. FIXED BOTTOM NAVIGATION BAR (5 TABS)                   */}
+      {/* 3. PERSISTENT 5-TAB BOTTOM NAVIGATION BAR                 */}
       {/* ========================================================= */}
-      <nav className="fixed bottom-0 inset-x-0 h-16 bg-white border-t border-slate-100 px-4 flex items-center justify-around z-30 shadow-lg">
+      <nav className="fixed bottom-0 inset-x-0 h-14 bg-white border-t border-[#E5E7EF] flex items-center justify-around z-30 shadow-lg">
         <button
-          onClick={() => setActiveTab('home')}
+          onClick={() => setActiveTab('book')}
           className={`flex flex-col items-center text-[10px] font-bold transition-colors ${
-            activeTab === 'home' ? 'text-[#F97316]' : 'text-slate-400 hover:text-slate-600'
+            activeTab === 'book' ? 'text-[#0067FA]' : 'text-slate-400 hover:text-slate-600'
           }`}
         >
-          <Home className="w-5 h-5 mb-0.5" />
-          <span>Home</span>
+          <FileText className="w-4 h-4 mb-0.5" />
+          <span>Book</span>
         </button>
 
         <button
-          onClick={() => setActiveTab('bookings')}
+          onClick={() => setActiveTab('trip')}
           className={`flex flex-col items-center text-[10px] font-bold transition-colors ${
-            activeTab === 'bookings' ? 'text-[#F97316]' : 'text-slate-400 hover:text-slate-600'
+            activeTab === 'trip' ? 'text-[#0067FA]' : 'text-slate-400 hover:text-slate-600'
           }`}
         >
-          <Calendar className="w-5 h-5 mb-0.5" />
-          <span>Bookings</span>
+          <Truck className="w-4 h-4 mb-0.5" />
+          <span>Trip</span>
         </button>
 
         <button
-          onClick={() => setActiveTab('track')}
+          onClick={() => setActiveTab('rates')}
           className={`flex flex-col items-center text-[10px] font-bold transition-colors ${
-            activeTab === 'track' ? 'text-[#F97316]' : 'text-slate-400 hover:text-slate-600'
+            activeTab === 'rates' ? 'text-[#0067FA]' : 'text-slate-400 hover:text-slate-600'
           }`}
         >
-          <Compass className="w-5 h-5 mb-0.5" />
-          <span>Track</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('invoices')}
-          className={`flex flex-col items-center text-[10px] font-bold transition-colors ${
-            activeTab === 'invoices' ? 'text-[#F97316]' : 'text-slate-400 hover:text-slate-600'
-          }`}
-        >
-          <FileText className="w-5 h-5 mb-0.5" />
-          <span>Invoices</span>
+          <TrendingUp className="w-4 h-4 mb-0.5" />
+          <span>Rates</span>
         </button>
 
         <button
           onClick={() => setActiveTab('support')}
           className={`flex flex-col items-center text-[10px] font-bold transition-colors ${
-            activeTab === 'support' ? 'text-[#F97316]' : 'text-slate-400 hover:text-slate-600'
+            activeTab === 'support' ? 'text-[#0067FA]' : 'text-slate-400 hover:text-slate-600'
           }`}
         >
-          <Headphones className="w-5 h-5 mb-0.5" />
+          <Headphones className="w-4 h-4 mb-0.5" />
           <span>Support</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('account')}
+          className={`flex flex-col items-center text-[10px] font-bold transition-colors ${
+            activeTab === 'account' ? 'text-[#0067FA]' : 'text-slate-400 hover:text-slate-600'
+          }`}
+        >
+          <User className="w-4 h-4 mb-0.5" />
+          <span>Account</span>
         </button>
       </nav>
 
       {/* ========================================================= */}
-      {/* 4. SLIDE-OUT NAVIGATION DRAWER                            */}
+      {/* 4. MODAL: BOOK TRUCK FORM (SCR-06)                        */}
       {/* ========================================================= */}
-      {drawerOpen && (
-        <div className="fixed inset-0 z-50 flex">
-          <div
-            onClick={() => setDrawerOpen(false)}
-            className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity"
-          ></div>
-
-          <div className="relative w-[300px] max-w-[85%] bg-white h-full shadow-2xl flex flex-col justify-between p-4 z-50 overflow-y-auto">
-            <div className="space-y-5">
-              <div className="flex items-center justify-between pb-3 border-b border-slate-100 pt-1">
-                <div className="flex items-center space-x-3">
-                  <div className="w-11 h-11 rounded-full overflow-hidden border-2 border-[#0B1B36]">
-                    <img
-                      src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=150&q=80"
-                      alt="Priya Sharma"
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <div>
-                    <div className="font-black text-sm text-[#0B1B36]">Priya Sharma</div>
-                    <div className="text-[11px] text-slate-500 font-medium">Tata Motors Parts Logistics</div>
-                  </div>
-                </div>
-                <button onClick={() => setDrawerOpen(false)} className="text-slate-400 hover:text-slate-600 p-1">
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
-              <div>
-                <div className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2">
-                  Customer Portal
-                </div>
-                <div className="space-y-1">
-                  <div
-                    onClick={() => {
-                      setActiveTab('home');
-                      setDrawerOpen(false);
-                    }}
-                    className={`flex items-center space-x-3 px-3 py-2 rounded-xl text-xs font-bold cursor-pointer ${
-                      activeTab === 'home' ? 'bg-[#E0F2FE] text-[#0284C7]' : 'text-slate-700 hover:bg-slate-50'
-                    }`}
-                  >
-                    <Home className="w-4 h-4" />
-                    <span>Dashboard</span>
-                  </div>
-
-                  <div
-                    onClick={() => {
-                      setShowBookTruckModal(true);
-                      setDrawerOpen(false);
-                    }}
-                    className="flex items-center space-x-3 px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-50 cursor-pointer"
-                  >
-                    <Truck className="w-4 h-4 text-slate-500" />
-                    <span>Book a Truck</span>
-                  </div>
-
-                  <div
-                    onClick={() => {
-                      setActiveTab('bookings');
-                      setDrawerOpen(false);
-                    }}
-                    className={`flex items-center space-x-3 px-3 py-2 rounded-xl text-xs font-semibold cursor-pointer ${
-                      activeTab === 'bookings' ? 'bg-[#E0F2FE] text-[#0284C7]' : 'text-slate-700 hover:bg-slate-50'
-                    }`}
-                  >
-                    <Calendar className="w-4 h-4 text-slate-500" />
-                    <span>My Bookings</span>
-                  </div>
-
-                  <div
-                    onClick={() => {
-                      setActiveTab('track');
-                      setDrawerOpen(false);
-                    }}
-                    className={`flex items-center space-x-3 px-3 py-2 rounded-xl text-xs font-semibold cursor-pointer ${
-                      activeTab === 'track' ? 'bg-[#E0F2FE] text-[#0284C7]' : 'text-slate-700 hover:bg-slate-50'
-                    }`}
-                  >
-                    <MapPin className="w-4 h-4 text-slate-500" />
-                    <span>Live GPS Telemetry</span>
-                  </div>
-
-                  <div
-                    onClick={() => {
-                      setActiveTab('invoices');
-                      setDrawerOpen(false);
-                    }}
-                    className={`flex items-center space-x-3 px-3 py-2 rounded-xl text-xs font-semibold cursor-pointer ${
-                      activeTab === 'invoices' ? 'bg-[#E0F2FE] text-[#0284C7]' : 'text-slate-700 hover:bg-slate-50'
-                    }`}
-                  >
-                    <FileText className="w-4 h-4 text-slate-500" />
-                    <span>Invoices & POD</span>
-                  </div>
-
-                  <div
-                    onClick={() => {
-                      setActiveTab('support');
-                      setDrawerOpen(false);
-                    }}
-                    className={`flex items-center space-x-3 px-3 py-2 rounded-xl text-xs font-semibold cursor-pointer ${
-                      activeTab === 'support' ? 'bg-[#E0F2FE] text-[#0284C7]' : 'text-slate-700 hover:bg-slate-50'
-                    }`}
-                  >
-                    <Headphones className="w-4 h-4 text-slate-500" />
-                    <span>Operations Support</span>
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <div className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2">
-                  System
-                </div>
-                <div className="space-y-1">
-                  <Link
-                    href="/platform"
-                    className="flex items-center space-x-3 px-3 py-2 rounded-xl text-xs font-semibold text-blue-700 hover:bg-blue-50 cursor-pointer"
-                  >
-                    <ShieldCheck className="w-4 h-4 text-blue-700" />
-                    <span>Platform Operations</span>
-                  </Link>
-                  <Link
-                    href="/driver"
-                    className="flex items-center space-x-3 px-3 py-2 rounded-xl text-xs font-semibold text-emerald-700 hover:bg-emerald-50 cursor-pointer"
-                  >
-                    <Truck className="w-4 h-4 text-emerald-700" />
-                    <span>Driver Mobile View</span>
-                  </Link>
-                  <Link
-                    href="/login"
-                    className="flex items-center space-x-3 px-3 py-2 rounded-xl text-xs font-semibold text-red-600 hover:bg-red-50 cursor-pointer"
-                  >
-                    <LogOut className="w-4 h-4 text-red-600" />
-                    <span>Logout</span>
-                  </Link>
-                </div>
-              </div>
-            </div>
-
-            <div className="pt-4 border-t border-slate-100 flex flex-col items-center">
-              <RouteNHLogo size="sm" theme="dark" showTagline={true} />
-              <div className="text-[9px] text-slate-400 mt-1 font-mono">v1.2.0 • Production Ready</div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ========================================================= */}
-      {/* 5. MODAL: BOOK A COMMERCIAL TRUCK                         */}
-      {/* ========================================================= */}
-      {showBookTruckModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-sm w-full p-5 shadow-2xl">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-3">
-              <h3 className="font-extrabold text-sm text-[#0B1B36]">Book Commercial Truck</h3>
-              <button onClick={() => setShowBookTruckModal(false)} className="text-slate-400 hover:text-slate-600">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            {bookingSuccessMsg ? (
-              <div className="p-4 bg-emerald-50 text-emerald-800 rounded-xl text-center text-xs font-bold border border-emerald-200">
-                {bookingSuccessMsg}
-              </div>
-            ) : (
-              <form onSubmit={handleSubmitBooking} className="space-y-3 text-xs">
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-700 mb-1">Pickup City</label>
-                  <input
-                    type="text"
-                    required
-                    value={pickupCity}
-                    onChange={(e) => setPickupCity(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-700 mb-1">Delivery Destination</label>
-                  <input
-                    type="text"
-                    required
-                    value={deliveryCity}
-                    onChange={(e) => setDeliveryCity(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-700 mb-1">Required Vehicle Body</label>
-                  <select
-                    value={vehicleCat}
-                    onChange={(e) => setVehicleCat(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs"
-                  >
-                    <option value="32ft MXL Container">Truck 01 — 32ft MXL Container (24 Ton)</option>
-                    <option value="20ft Multi-Axle Open">Truck 02 — 20ft Multi-Axle Open (15 Ton)</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-700 mb-1">Cargo Description</label>
-                  <input
-                    type="text"
-                    required
-                    value={cargoDesc}
-                    onChange={(e) => setCargoDesc(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-700 mb-1">Cargo Weight (kg)</label>
-                  <input
-                    type="number"
-                    required
-                    value={cargoWeight}
-                    onChange={(e) => setCargoWeight(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs"
-                  />
-                </div>
-                <div className="pt-2 flex justify-end space-x-2">
-                  <button
-                    type="button"
-                    onClick={() => setShowBookTruckModal(false)}
-                    className="px-3 py-1.5 border border-slate-300 rounded-lg text-slate-600"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={bookingLoading}
-                    className="px-4 py-1.5 bg-[#0B1B36] text-white font-bold rounded-lg shadow hover:bg-slate-800 disabled:opacity-50"
-                  >
-                    {bookingLoading ? 'Submitting...' : 'Confirm Request'}
-                  </button>
-                </div>
-              </form>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* ========================================================= */}
-      {/* 6. MODAL: GET INSTANT QUOTE                               */}
-      {/* ========================================================= */}
-      {showQuoteModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-sm w-full p-5 shadow-2xl">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-3">
-              <h3 className="font-extrabold text-sm text-[#0B1B36]">Corridor Freight Estimate</h3>
-              <button onClick={() => setShowQuoteModal(false)} className="text-slate-400 hover:text-slate-600">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <div className="space-y-3 text-xs">
-              <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
-                <div className="font-bold text-slate-900">Route: Chennai → Bengaluru (345 km)</div>
-                <div className="text-slate-500 text-[11px] mt-0.5">Vehicle: Truck 01 (32ft MXL Container)</div>
-              </div>
-              <div className="divide-y divide-slate-100 text-slate-700">
-                <div className="py-1.5 flex justify-between">
-                  <span>Base Freight</span>
-                  <span className="font-bold">₹28,500</span>
-                </div>
-                <div className="py-1.5 flex justify-between">
-                  <span>Loading & Handling</span>
-                  <span className="font-bold">₹2,000</span>
-                </div>
-                <div className="py-1.5 flex justify-between">
-                  <span>NH Fastag Toll</span>
-                  <span className="font-bold">₹1,800</span>
-                </div>
-                <div className="py-1.5 flex justify-between">
-                  <span>GST (18% - SAC 9965)</span>
-                  <span className="font-bold">₹5,814</span>
-                </div>
-                <div className="py-2 flex justify-between text-sm font-black text-[#0B1B36]">
-                  <span>Total Amount</span>
-                  <span className="text-[#F97316]">₹38,114</span>
-                </div>
-              </div>
-              <div className="pt-2 flex justify-end space-x-2">
-                <button
-                  type="button"
-                  onClick={() => setShowQuoteModal(false)}
-                  className="px-3 py-1.5 border border-slate-300 rounded-lg text-slate-600"
-                >
-                  Close
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowQuoteModal(false);
-                    setShowBookTruckModal(true);
-                  }}
-                  className="px-4 py-1.5 bg-[#F97316] text-white font-bold rounded-lg shadow"
-                >
-                  Proceed to Book
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ========================================================= */}
-      {/* 7. MODAL: VIEW PROOF OF DELIVERY (POD)                    */}
-      {/* ========================================================= */}
-      {showPodModal && (
-        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-sm w-full p-4 shadow-2xl space-y-3">
+      {showBookModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 flex flex-col justify-end">
+          <div className="bg-white rounded-t-2xl max-h-[90vh] overflow-y-auto p-4 space-y-4 shadow-2xl">
             <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-              <h3 className="font-extrabold text-sm text-[#0B1B36]">Signed Proof of Delivery (POD)</h3>
-              <button onClick={() => setShowPodModal(null)} className="text-slate-400 hover:text-slate-600">
+              <h3 className="font-extrabold text-sm text-[#0B1B36]">Book truck</h3>
+              <button onClick={() => setShowBookModal(false)} className="text-slate-400 hover:text-slate-600 p-1">
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <div className="bg-slate-100 rounded-xl p-3 text-center border border-slate-200">
-              <div className="w-full h-40 bg-white rounded-lg border-2 border-dashed border-slate-300 flex flex-col items-center justify-center p-4">
-                <CheckCircle className="w-10 h-10 text-emerald-600 mb-1" />
-                <span className="text-xs font-bold text-slate-800">Physical POD Verified & Stamped</span>
-                <span className="text-[10px] text-slate-400 mt-0.5">{showPodModal.file}</span>
-                <span className="text-[9px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full mt-2 font-bold border border-emerald-200">
-                  {showPodModal.verifiedBy}
-                </span>
+
+            {/* 2x2 Grid matching SCR-06 */}
+            <div className="grid grid-cols-2 gap-2.5 text-xs">
+              <div
+                onClick={() => setShowCityPicker('from')}
+                className="bg-[#F2F4FD] p-2.5 rounded-lg border border-blue-100 cursor-pointer"
+              >
+                <div className="text-[10px] text-slate-400 font-bold uppercase">From</div>
+                <div className="font-bold text-slate-900 truncate mt-0.5">{fromCity}</div>
+              </div>
+
+              <div
+                onClick={() => setShowCityPicker('to')}
+                className="bg-[#F2F4FD] p-2.5 rounded-lg border border-blue-100 cursor-pointer"
+              >
+                <div className="text-[10px] text-slate-400 font-bold uppercase">To</div>
+                <div className="font-bold text-slate-900 truncate mt-0.5">{toCity}</div>
+              </div>
+
+              <div
+                onClick={() => setShowMaterialPicker(true)}
+                className="bg-[#F2F4FD] p-2.5 rounded-lg border border-blue-100 cursor-pointer"
+              >
+                <div className="text-[10px] text-slate-400 font-bold uppercase">Material type</div>
+                <div className="font-bold text-slate-900 truncate mt-0.5 flex items-center justify-between">
+                  <span>{materialType}</span>
+                  <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+                </div>
+              </div>
+
+              <div className="bg-[#F2F4FD] p-2.5 rounded-lg border border-blue-100">
+                <div className="text-[10px] text-slate-400 font-bold uppercase">Ton(MT)</div>
+                <input
+                  type="number"
+                  value={tonnage}
+                  onChange={(e) => setTonnage(e.target.value)}
+                  className="w-full bg-transparent font-bold text-slate-900 text-xs focus:outline-none mt-0.5"
+                />
               </div>
             </div>
+
+            {/* Categorized Truck Type Chips matching SCR-06 */}
+            <div className="space-y-3 text-xs">
+              <div className="font-extrabold text-slate-900 text-xs">Select Truck type</div>
+
+              {/* Open body */}
+              <div className="space-y-1.5">
+                <div className="text-[11px] font-bold text-slate-500">Open Body Trucks</div>
+                <div className="flex flex-wrap gap-1.5">
+                  {truckCategories.Open.map((type) => (
+                    <button
+                      key={type}
+                      type="button"
+                      onClick={() => setSelectedBodyType(type)}
+                      className={`px-2.5 py-1 rounded-full text-[11px] font-bold transition-all ${
+                        selectedBodyType === type
+                          ? 'bg-[#0067FA] text-white shadow-xs'
+                          : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                      }`}
+                    >
+                      {type}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Closed Container */}
+              <div className="space-y-1.5">
+                <div className="text-[11px] font-bold text-slate-500">Closed Container Trucks</div>
+                <div className="flex flex-wrap gap-1.5">
+                  {truckCategories.Closed.map((type) => (
+                    <button
+                      key={type}
+                      type="button"
+                      onClick={() => setSelectedBodyType(type)}
+                      className={`px-2.5 py-1 rounded-full text-[11px] font-bold transition-all ${
+                        selectedBodyType === type
+                          ? 'bg-[#0067FA] text-white shadow-xs'
+                          : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                      }`}
+                    >
+                      {type}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Trailers */}
+              <div className="space-y-1.5">
+                <div className="text-[11px] font-bold text-slate-500">Trailer & Flat Bed</div>
+                <div className="flex flex-wrap gap-1.5">
+                  {truckCategories.Trailer.map((type) => (
+                    <button
+                      key={type}
+                      type="button"
+                      onClick={() => setSelectedBodyType(type)}
+                      className={`px-2.5 py-1 rounded-full text-[11px] font-bold transition-all ${
+                        selectedBodyType === type
+                          ? 'bg-[#0067FA] text-white shadow-xs'
+                          : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                      }`}
+                    >
+                      {type}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Notes Input */}
+            <div>
+              <label className="block text-[11px] font-bold text-slate-700 mb-1">Notes</label>
+              <input
+                type="text"
+                placeholder="Enter other requirements..."
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs"
+              />
+            </div>
+
+            {/* Sticky Bottom CTA */}
             <button
               onClick={() => {
-                alert('Opening official signed POD copy');
-                setShowPodModal(null);
+                alert(`Booking submitted for ${selectedBodyType} from ${fromCity} to ${toCity}!`);
+                setShowBookModal(false);
               }}
-              className="w-full py-2 bg-[#0B1B36] text-white rounded-xl text-xs font-bold"
+              className="w-full py-3 bg-[#002F70] text-white font-extrabold rounded-xl text-xs shadow-md hover:bg-slate-800 transition-colors"
             >
-              Download Stamped Receipt
+              Book
             </button>
           </div>
         </div>
       )}
 
       {/* ========================================================= */}
-      {/* 8. MODAL: NOTIFICATIONS                                   */}
+      {/* 5. MODAL: CITY SEARCH OVERLAY (SCR-07)                    */}
       {/* ========================================================= */}
-      {showNotificationsModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-sm w-full p-4 shadow-2xl">
-            <div className="flex items-center justify-between pb-2 border-b border-slate-100 mb-3">
-              <h3 className="font-extrabold text-sm text-[#0B1B36]">Notifications</h3>
-              <button onClick={() => setShowNotificationsModal(false)} className="text-slate-400 hover:text-slate-600">
+      {showCityPicker && (
+        <div className="fixed inset-0 z-50 bg-white flex flex-col">
+          <div className="p-3 border-b border-slate-200 flex items-center space-x-2">
+            <button onClick={() => setShowCityPicker(null)} className="p-1">
+              <ArrowRight className="w-5 h-5 rotate-180 text-slate-700" />
+            </button>
+            <input
+              type="text"
+              autoFocus
+              placeholder={`Enter ${showCityPicker === 'from' ? 'source' : 'destination'} city...`}
+              value={citySearchTerm}
+              onChange={(e) => setCitySearchTerm(e.target.value)}
+              className="flex-1 px-3 py-1.5 border border-[#0067FA] rounded-lg text-xs focus:outline-none"
+            />
+          </div>
+
+          <div className="p-4 flex-1 overflow-y-auto space-y-3 text-xs">
+            <div className="font-extrabold text-slate-400 text-[10px] uppercase">Major Transport Hubs</div>
+            <div className="divide-y divide-slate-100">
+              {citiesList
+                .filter((c) => c.toLowerCase().includes(citySearchTerm.toLowerCase()))
+                .map((city) => (
+                  <div
+                    key={city}
+                    onClick={() => {
+                      if (showCityPicker === 'from') setFromCity(city);
+                      else setToCity(city);
+                      setShowCityPicker(null);
+                      setCitySearchTerm('');
+                    }}
+                    className="py-2.5 flex items-center justify-between hover:bg-slate-50 cursor-pointer"
+                  >
+                    <span className="font-bold text-slate-800">{city}</span>
+                    <MapPin className="w-3.5 h-3.5 text-slate-400" />
+                  </div>
+                ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================= */}
+      {/* 6. MODAL: MATERIAL TYPE SELECTOR (SCR-08)                 */}
+      {/* ========================================================= */}
+      {showMaterialPicker && (
+        <div className="fixed inset-0 z-50 bg-white flex flex-col">
+          <div className="p-3 border-b border-slate-200 flex items-center space-x-2">
+            <button onClick={() => setShowMaterialPicker(false)} className="p-1">
+              <ArrowRight className="w-5 h-5 rotate-180 text-slate-700" />
+            </button>
+            <input
+              type="text"
+              autoFocus
+              placeholder="Enter material type..."
+              value={materialSearchTerm}
+              onChange={(e) => setMaterialSearchTerm(e.target.value)}
+              className="flex-1 px-3 py-1.5 border border-[#0067FA] rounded-lg text-xs focus:outline-none"
+            />
+          </div>
+
+          <div className="p-4 flex-1 overflow-y-auto divide-y divide-slate-100 text-xs">
+            {commodities
+              .filter((c) => c.toLowerCase().includes(materialSearchTerm.toLowerCase()))
+              .map((c) => (
+                <div
+                  key={c}
+                  onClick={() => {
+                    setMaterialType(c);
+                    setShowMaterialPicker(false);
+                    setMaterialSearchTerm('');
+                  }}
+                  className="py-2.5 flex items-center justify-between hover:bg-slate-50 cursor-pointer"
+                >
+                  <span className="font-bold text-slate-800">{c}</span>
+                  {materialType === c && <Check className="w-4 h-4 text-[#0067FA]" />}
+                </div>
+              ))}
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================= */}
+      {/* 7. BOTTOM SHEET: TRIP TIMELINE (SCR-05)                   */}
+      {/* ========================================================= */}
+      {showTimelineSheet && (
+        <div className="fixed inset-0 z-50 bg-black/60 flex flex-col justify-end">
+          <div className="bg-white rounded-t-2xl max-h-[85vh] overflow-y-auto p-4 space-y-3 shadow-2xl">
+            <div className="w-10 h-1 bg-slate-300 rounded-full mx-auto mb-1"></div>
+            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+              <h3 className="font-extrabold text-sm text-[#0B1B36]">Trip Timeline & Milestones</h3>
+              <button onClick={() => setShowTimelineSheet(false)} className="text-slate-400 hover:text-slate-600">
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <div className="space-y-2">
-              <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 flex items-center justify-between">
-                <div className="flex items-center space-x-2.5">
-                  <div className="w-7 h-7 rounded-full bg-[#0B1B36] text-white flex items-center justify-center flex-shrink-0">
-                    <Bell className="w-3.5 h-3.5" />
+
+            <div className="bg-[#F2F4FD] p-3 rounded-xl border border-blue-100 text-xs space-y-1">
+              <div className="flex justify-between font-bold text-slate-900">
+                <span>TAT: 1d 18h (Ahead of Schedule)</span>
+                <span>482 KM</span>
+              </div>
+              <div className="text-[11px] text-slate-500">Vehicle: Truck 01 (TN-01-AB-1234)</div>
+            </div>
+
+            {/* 10-Stage Horizontal/Vertical Stepper matching SCR-05 */}
+            <div className="space-y-2 text-xs py-2">
+              {[
+                { title: 'Confirmed', time: '20 Nov 2026, 11:00 AM', done: true },
+                { title: 'Loading', time: '20 Nov 2026, 02:30 PM', done: true },
+                { title: 'Intransit', time: '21 Nov 2026, 06:15 AM', done: true },
+                { title: 'Unloading', time: '22 Nov 2026, 04:00 PM', done: true },
+                { title: 'Delivered', time: '22 Nov 2026, 05:45 PM', done: true },
+                { title: 'POD Verified', time: '23 Nov 2026, 10:30 AM', done: true },
+                { title: 'Invoiced', time: '23 Nov 2026, 02:00 PM', done: true },
+                { title: 'POD Disp', time: 'Pending Dispatch', done: false },
+                { title: 'Paid', time: 'Pending', done: false },
+                { title: 'Closed', time: 'Pending', done: false },
+              ].map((step, idx) => (
+                <div key={step.title} className="flex items-start space-x-3">
+                  <div
+                    className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0 mt-0.5 ${
+                      step.done ? 'bg-emerald-500 text-white' : 'bg-slate-200 text-slate-500'
+                    }`}
+                  >
+                    {step.done ? '✓' : idx + 1}
                   </div>
                   <div>
-                    <div className="text-[11px] font-bold text-slate-900 leading-tight">
-                      Truck 01 telemetry active on NH 48 corridor.
-                    </div>
-                    <div className="text-[9px] text-slate-400 mt-0.5">2m ago</div>
+                    <div className="font-bold text-slate-900">{step.title}</div>
+                    <div className="text-[10px] text-slate-400">{step.time}</div>
                   </div>
                 </div>
-                <ChevronRight className="w-4 h-4 text-slate-400 flex-shrink-0" />
+              ))}
+            </div>
+
+            <button
+              onClick={() => setShowTimelineSheet(false)}
+              className="w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold rounded-lg text-xs"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================= */}
+      {/* 8. SUB-SCREEN: LIVE TRACKING (SCR-14)                     */}
+      {/* ========================================================= */}
+      {showTrackingScreen && (
+        <div className="fixed inset-0 z-50 bg-[#F2F4FD] flex flex-col">
+          <div className="bg-white border-b border-slate-200 px-4 py-3 flex items-center justify-between">
+            <button onClick={() => setShowTrackingScreen(false)} className="flex items-center space-x-2">
+              <ArrowRight className="w-5 h-5 rotate-180 text-slate-800" />
+              <span className="font-extrabold text-sm text-[#0B1B36]">Live Highway Tracking</span>
+            </button>
+            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center space-x-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span>LIVE GPS</span>
+            </span>
+          </div>
+
+          <div className="flex-1 overflow-y-auto p-4 space-y-3">
+            {/* Map visualizer */}
+            <div className="h-44 w-full rounded-xl overflow-hidden bg-[#0A192F] relative p-3 flex flex-col justify-between text-white">
+              <svg className="absolute inset-0 w-full h-full opacity-60" viewBox="0 0 400 200" preserveAspectRatio="none">
+                <path d="M 20 180 Q 150 40, 380 30" fill="none" stroke="#1E3A8A" strokeWidth="24" strokeLinecap="round" />
+                <path d="M 20 180 Q 150 40, 380 30" fill="none" stroke="#0067FA" strokeWidth="18" strokeLinecap="round" />
+                <path
+                  d="M 20 180 Q 150 40, 380 30"
+                  fill="none"
+                  stroke="#FFFFFF"
+                  strokeWidth="2"
+                  strokeDasharray="8 8"
+                  strokeLinecap="round"
+                />
+                <circle cx="210" cy="85" r="9" fill="#0067FA" stroke="#FFFFFF" strokeWidth="2" />
+                <circle cx="210" cy="85" r="16" fill="#0067FA" opacity="0.3" className="animate-ping" />
+              </svg>
+
+              <div className="relative z-10 flex items-center justify-between text-[11px]">
+                <span className="font-mono bg-black/70 px-2 py-0.5 rounded font-bold text-blue-300">
+                  Corridor: NH 48 (Chennai ↔ Mumbai)
+                </span>
+                <span className="bg-emerald-500/30 text-emerald-300 border border-emerald-400/30 px-2 py-0.5 rounded text-[10px] font-bold">
+                  Speed: {telemetry?.speed ? `${telemetry.speed} km/h` : '58.5 km/h'}
+                </span>
               </div>
 
-              <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 flex items-center justify-between">
-                <div className="flex items-center space-x-2.5">
-                  <div className="w-7 h-7 rounded-full bg-emerald-600 text-white flex items-center justify-center flex-shrink-0">
-                    <CheckCircle className="w-3.5 h-3.5" />
-                  </div>
-                  <div>
-                    <div className="text-[11px] font-bold text-slate-900 leading-tight">
-                      Delivery completed for RNH-BK-2026-0001.
-                    </div>
-                    <div className="text-[9px] text-slate-400 mt-0.5">Signed POD uploaded</div>
-                  </div>
-                </div>
-                <ChevronRight className="w-4 h-4 text-slate-400 flex-shrink-0" />
+              <div className="relative z-10 bg-slate-900/90 p-2 rounded text-[10px] flex justify-between font-mono">
+                <span>Truck 01 (AIS-140 GPS)</span>
+                <span className="text-emerald-400">
+                  {telemetry?.latitude ? `${telemetry.latitude}°N, ${telemetry.longitude}°E` : '18.6298°N, 73.7997°E'}
+                </span>
               </div>
             </div>
+
+            {/* Toll Plaza Timeline matching SCR-14 */}
+            <div className="bg-white rounded-xl p-3.5 border border-[#E2E8F0] shadow-xs space-y-2 text-xs">
+              <div className="font-bold text-slate-900">National Highway Toll Passages</div>
+              <div className="space-y-2 divide-y divide-slate-100">
+                <div className="pt-1.5 flex justify-between">
+                  <span className="font-medium text-slate-700">Sriperumbudur Toll Plaza</span>
+                  <span className="text-emerald-600 font-bold">Cleared (02:15 PM)</span>
+                </div>
+                <div className="pt-1.5 flex justify-between">
+                  <span className="font-medium text-slate-700">Vellore Golden Fort Toll Plaza</span>
+                  <span className="text-emerald-600 font-bold">Cleared (05:40 PM)</span>
+                </div>
+                <div className="pt-1.5 flex justify-between">
+                  <span className="font-medium text-slate-700">Krishnagiri Junction Toll</span>
+                  <span className="text-blue-600 font-bold">Approaching (~45m)</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Advance Telemetry Step */}
+            <button
+              onClick={handleSimulateStep}
+              disabled={isSimulating}
+              className="w-full py-2.5 bg-[#002F70] text-white font-bold rounded-xl text-xs flex items-center justify-center space-x-2"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isSimulating ? 'animate-spin' : ''}`} />
+              <span>Advance Simulated Highway Telemetry</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================= */}
+      {/* 9. BOTTOM SHEET: PAYMENT DETAILS (SCR-12)                 */}
+      {/* ========================================================= */}
+      {showPaymentSheet && (
+        <div className="fixed inset-0 z-50 bg-black/60 flex flex-col justify-end">
+          <div className="bg-white rounded-t-2xl p-4 space-y-3 shadow-2xl text-xs">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+              <h3 className="font-extrabold text-sm text-[#0B1B36]">Payment details</h3>
+              <button onClick={() => setShowPaymentSheet(false)}>
+                <X className="w-5 h-5 text-slate-400" />
+              </button>
+            </div>
+            <div className="space-y-2 divide-y divide-slate-100">
+              <div className="flex justify-between py-1">
+                <span className="text-slate-600">Base Freight</span>
+                <span className="font-bold">₹34,000</span>
+              </div>
+              <div className="flex justify-between py-1">
+                <span className="text-slate-600">Advance Paid (Driver Fuel/Enroute)</span>
+                <span className="font-bold text-emerald-600">-₹20,000</span>
+              </div>
+              <div className="flex justify-between py-1">
+                <span className="text-slate-600">Tolls & Green Tax</span>
+                <span className="font-bold">₹1,800</span>
+              </div>
+              <div className="flex justify-between py-1">
+                <span className="text-slate-600">GST (18%)</span>
+                <span className="font-bold">₹4,000</span>
+              </div>
+              <div className="flex justify-between pt-2 font-black text-sm text-[#0B1B36]">
+                <span>Balance Payable upon POD</span>
+                <span className="text-[#0067FA]">₹19,800</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================= */}
+      {/* 10. BOTTOM SHEET: DOCUMENTS (SCR-13)                      */}
+      {/* ========================================================= */}
+      {showDocumentsSheet && (
+        <div className="fixed inset-0 z-50 bg-black/60 flex flex-col justify-end">
+          <div className="bg-white rounded-t-2xl p-4 space-y-3 shadow-2xl text-xs">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+              <h3 className="font-extrabold text-sm text-[#0B1B36]">Consignment Documents</h3>
+              <button onClick={() => setShowDocumentsSheet(false)}>
+                <X className="w-5 h-5 text-slate-400" />
+              </button>
+            </div>
+            <div className="space-y-2">
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
+                <div>
+                  <div className="font-bold text-slate-900">Signed & Stamped POD</div>
+                  <div className="text-[10px] text-slate-400">Verified by Rajesh Nair (Ops Manager)</div>
+                </div>
+                <button
+                  onClick={() => alert('Downloading official Stamped Delivery Receipt PDF')}
+                  className="px-3 py-1 bg-[#002F70] text-white rounded font-bold text-[10px]"
+                >
+                  Download
+                </button>
+              </div>
+
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
+                <div>
+                  <div className="font-bold text-slate-900">Official Lorry Receipt (LR)</div>
+                  <div className="text-[10px] text-slate-400">RNH-LR-2026-0001.pdf</div>
+                </div>
+                <button
+                  onClick={() => alert('Downloading Lorry Receipt')}
+                  className="px-3 py-1 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded font-bold text-[10px]"
+                >
+                  Download
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================= */}
+      {/* 11. BOTTOM SHEET: ORGANIZATION DETAILS (SCR-26)           */}
+      {/* ========================================================= */}
+      {showOrgSheet && (
+        <div className="fixed inset-0 z-50 bg-black/60 flex flex-col justify-end">
+          <div className="bg-white rounded-t-2xl p-4 space-y-3 shadow-2xl text-xs">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+              <h3 className="font-extrabold text-sm text-[#0B1B36]">Organization Tax Details</h3>
+              <button onClick={() => setShowOrgSheet(false)}>
+                <X className="w-5 h-5 text-slate-400" />
+              </button>
+            </div>
+            <div className="space-y-2 divide-y divide-slate-100">
+              <div className="py-1">
+                <span className="text-[10px] text-slate-400 font-bold uppercase block">Company Name</span>
+                <span className="font-bold text-slate-900">Tata Motors Parts Distribution Division</span>
+              </div>
+              <div className="py-1">
+                <span className="text-[10px] text-slate-400 font-bold uppercase block">GSTIN</span>
+                <span className="font-mono font-bold text-slate-900">27AAACT2727Q1ZW</span>
+              </div>
+              <div className="py-1">
+                <span className="text-[10px] text-slate-400 font-bold uppercase block">PAN</span>
+                <span className="font-mono font-bold text-slate-900">AAACT2727Q</span>
+              </div>
+              <div className="py-1">
+                <span className="text-[10px] text-slate-400 font-bold uppercase block">Registered Billing Address</span>
+                <span className="text-slate-700">Tata Motors Plant, Gate No. 4, Pimpri Logistics Hub, Pune 411018</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================= */}
+      {/* 12. BOTTOM SHEET: USERS MANAGEMENT (SCR-27)               */}
+      {/* ========================================================= */}
+      {showUsersSheet && (
+        <div className="fixed inset-0 z-50 bg-black/60 flex flex-col justify-end">
+          <div className="bg-white rounded-t-2xl p-4 space-y-3 shadow-2xl text-xs max-h-[85vh] overflow-y-auto">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+              <h3 className="font-extrabold text-sm text-[#0B1B36]">Organization Users</h3>
+              <button onClick={() => setShowUsersSheet(false)}>
+                <X className="w-5 h-5 text-slate-400" />
+              </button>
+            </div>
+
+            <div className="space-y-2">
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
+                <div>
+                  <div className="font-bold text-slate-900">Priya Sharma</div>
+                  <div className="text-[10px] text-slate-500">priyasharma@gmail.com • +91 98765 43210</div>
+                </div>
+                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-[#0067FA]">Admin</span>
+              </div>
+
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
+                <div>
+                  <div className="font-bold text-slate-900">Rohan Deshmukh</div>
+                  <div className="text-[10px] text-slate-500">rohan.plant@tatamotors.com • +91 98220 11223</div>
+                </div>
+                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-700">Dispatcher</span>
+              </div>
+            </div>
+
+            <button
+              onClick={() => {
+                alert('Add User modal opened');
+              }}
+              className="w-full py-2.5 bg-[#002F70] text-white font-bold rounded-xl text-xs flex items-center justify-center space-x-1"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>Add Sub-User</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================= */}
+      {/* 13. BOTTOM SHEET: ACCOUNT BALANCE / VIRTUAL ACCT (SCR-29) */}
+      {/* ========================================================= */}
+      {showBalanceSheet && (
+        <div className="fixed inset-0 z-50 bg-black/60 flex flex-col justify-end">
+          <div className="bg-white rounded-t-2xl p-4 space-y-3 shadow-2xl text-xs">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+              <h3 className="font-extrabold text-sm text-[#0B1B36]">Virtual Account for NEFT/RTGS</h3>
+              <button onClick={() => setShowBalanceSheet(false)}>
+                <X className="w-5 h-5 text-slate-400" />
+              </button>
+            </div>
+            <div className="space-y-2 divide-y divide-slate-100">
+              <div className="py-1">
+                <span className="text-[10px] text-slate-400 font-bold uppercase block">Bank Name</span>
+                <span className="font-bold text-slate-900">HDFC Bank Limited (Corporate Freight Banking)</span>
+              </div>
+              <div className="py-1">
+                <span className="text-[10px] text-slate-400 font-bold uppercase block">Virtual Account Number</span>
+                <span className="font-mono font-bold text-blue-700 text-sm">RNHVAN00192831</span>
+              </div>
+              <div className="py-1">
+                <span className="text-[10px] text-slate-400 font-bold uppercase block">IFSC Code</span>
+                <span className="font-mono font-bold text-slate-900">HDFC0000060</span>
+              </div>
+              <div className="py-1">
+                <span className="text-[10px] text-slate-400 font-bold uppercase block">Beneficiary Name</span>
+                <span className="font-bold text-slate-900">Route NH Transport Private Limited</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================= */}
+      {/* 14. BOTTOM SHEET: 24/7 HELPDESK CALL (SCR-34)             */}
+      {/* ========================================================= */}
+      {showAccountHelpSheet && (
+        <div className="fixed inset-0 z-50 bg-black/60 flex flex-col justify-end">
+          <div className="bg-white rounded-t-2xl p-4 space-y-3 shadow-2xl text-xs">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+              <h3 className="font-extrabold text-sm text-[#0B1B36]">Route NH Operations Helpline</h3>
+              <button onClick={() => setShowAccountHelpSheet(false)}>
+                <X className="w-5 h-5 text-slate-400" />
+              </button>
+            </div>
+            <div className="bg-[#F2F4FD] p-3 rounded-xl border border-blue-100 space-y-1">
+              <div className="font-extrabold text-slate-900 text-sm">24/7 Traffic Control Room</div>
+              <div className="text-slate-600 text-xs">Direct escalation for highway delays, breakdowns, and POD</div>
+            </div>
+            <a
+              href="tel:+911140509000"
+              className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold rounded-xl text-xs flex items-center justify-center space-x-2"
+            >
+              <Phone className="w-4 h-4" />
+              <span>Call +91 11 4050 9000</span>
+            </a>
           </div>
         </div>
       )}

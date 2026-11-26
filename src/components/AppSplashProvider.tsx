@@ -14,6 +14,12 @@ export default function AppSplashProvider({
   useEffect(() => {
     setIsClient(true);
     try {
+      // If running inside Android Native container, Jetpack Compose already displayed the native splash
+      if (typeof window !== 'undefined' && (window as any).RouteNHNative?.isNativeApp?.()) {
+        setShowSplash(false);
+        return;
+      }
+
       const splashDone = sessionStorage.getItem('route_nh_splash_completed');
       if (!splashDone) {
         setShowSplash(true);

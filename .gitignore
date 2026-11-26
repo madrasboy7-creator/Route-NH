@@ -1,10 +1,29 @@
-node_modules
-.next
-*.log
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Next.js / build outputs
+.next/
+**/.next/
+out/
+build/
+coverage/
+
+# Databases & local state
 dev.db-journal
+scratch/
+
+# Environment & secrets
 .env
 .env.local
+**/.env*
+*.pem
+
+# Logs & temp screenshots
+*.log
 phone_*.png
 real_hwc.png
 screencap_now.png
-scratch/
+auto-sync.log
+.auto-sync.lock
+.DS_Store

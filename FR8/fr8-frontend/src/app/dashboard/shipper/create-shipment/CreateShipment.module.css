@@ -1,0 +1,405 @@
+.wizardContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.progressTracker {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--bg-card);
+  padding: 1.5rem 2rem;
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-color);
+  overflow-x: auto;
+}
+
+.progressStep {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  position: relative;
+  flex: 1;
+}
+
+.stepIcon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--bg-main);
+  color: var(--text-gray);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  transition: all 0.3s;
+  border: 2px solid var(--border-color);
+}
+
+.activeStep {
+  background: var(--primary-600);
+  color: white;
+  border-color: var(--primary-600);
+  box-shadow: 0 0 0 4px var(--primary-100);
+}
+
+.completedStep {
+  background: var(--primary-100);
+  color: var(--primary-600);
+  border-color: var(--primary-600);
+}
+
+.stepLabel {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--text-gray);
+  white-space: nowrap;
+}
+
+.activeStep + .stepLabel {
+  color: var(--primary-600);
+  font-weight: 600;
+}
+
+.stepLine {
+  position: absolute;
+  top: 24px;
+  left: 50%;
+  width: 100%;
+  height: 2px;
+  background: var(--border-color);
+  z-index: 1;
+}
+
+.completedLine {
+  background: var(--primary-600);
+}
+
+.wizardCard {
+  background: var(--bg-card);
+  padding: 2.5rem;
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border-color);
+  min-height: 500px;
+  display: flex;
+  flex-direction: column;
+}
+
+.stepContent {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.stepContent h3 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 1rem;
+}
+
+/* Step 1 Styles */
+.mapMockup {
+  width: 100%;
+  height: 200px;
+  background: #e5e7eb; /* map color mock */
+  border-radius: var(--radius-lg);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border-color);
+}
+
+.mapOverlay {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  background: rgba(255, 255, 255, 0.8);
+  padding: 0.25rem 0.75rem;
+  border-radius: 1rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.mapPins {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  position: relative;
+}
+
+.pinPickup { color: var(--primary-600); }
+.pinDrop { color: var(--accent-500); }
+.routeLine {
+  width: 100px;
+  height: 2px;
+  background: dashed 2px var(--text-gray);
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+.inputGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.inputGroup label {
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.inputGroup input, .inputGroup select {
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  font-size: 1rem;
+  outline: none;
+  background: var(--bg-main);
+}
+
+.inputWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.inputWrapper input {
+  width: 100%;
+  padding-left: 2.5rem;
+}
+
+.inputIcon {
+  position: absolute;
+  left: 0.75rem;
+  color: var(--text-gray);
+}
+
+/* Step 2 Styles */
+.sectionTitle {
+  font-size: 1.1rem;
+  margin-top: 1rem;
+  color: var(--text-dark);
+}
+
+.checkboxGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.checkboxLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.checkboxLabel:hover {
+  background: var(--primary-50);
+  border-color: var(--primary-200);
+}
+
+/* Step 3 Styles */
+.vehicleGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.5rem;
+}
+
+.vehicleCard {
+  background: var(--bg-main);
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.selectedVehicle {
+  border-color: var(--primary-600);
+  background: var(--primary-50);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
+}
+
+.vehicleImg {
+  font-size: 3rem;
+  margin-bottom: 0.5rem;
+}
+
+.vehicleCard h4 {
+  font-size: 1.1rem;
+}
+
+.vehicleCard p {
+  font-size: 0.8rem;
+  color: var(--text-gray);
+}
+
+.vehicleMeta {
+  display: flex;
+  flex-direction: column;
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--border-color);
+  width: 100%;
+}
+
+.vPrice {
+  font-weight: 700;
+  color: var(--primary-600);
+  font-size: 1.1rem;
+}
+
+.vEta {
+  font-size: 0.75rem;
+  color: #16a34a;
+}
+
+/* Step 4 Styles */
+.receiptCard {
+  background: var(--bg-main);
+  border-radius: var(--radius-lg);
+  padding: 2rem;
+  max-width: 500px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.receiptHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px dashed var(--border-color);
+}
+
+.receiptHeader h4 {
+  font-size: 1.25rem;
+}
+
+.receiptHeader span {
+  font-size: 0.8rem;
+  background: #fef3c7;
+  color: #d97706;
+  padding: 0.25rem 0.5rem;
+  border-radius: 1rem;
+}
+
+.receiptLine {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+  color: var(--text-gray);
+}
+
+.divider {
+  height: 1px;
+  background: var(--border-color);
+  margin: 1.5rem 0;
+}
+
+.receiptTotal {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-dark);
+}
+
+/* Step 5 Styles */
+.successContent {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 1.5rem;
+  height: 100%;
+  min-height: 400px;
+}
+
+.successIconWrapper {
+  position: relative;
+  width: 100px;
+  height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.successIcon {
+  color: #16a34a;
+  z-index: 2;
+}
+
+.pulseRing {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: #dcfce7;
+  z-index: 1;
+}
+
+.bookingIdCard {
+  background: var(--primary-50);
+  border: 1px dashed var(--primary-600);
+  padding: 1rem 2rem;
+  border-radius: var(--radius-md);
+  display: flex;
+  gap: 1rem;
+  font-size: 1.25rem;
+  margin: 1rem 0;
+}
+
+.successActions {
+  display: flex;
+  gap: 1rem;
+}
+
+/* Footer */
+.wizardFooter {
+  display: flex;
+  justify-content: space-between;
+  padding-top: 2rem;
+  border-top: 1px solid var(--border-color);
+  margin-top: auto;
+}
+
+.hidden {
+  visibility: hidden;
+}
+
+@media (max-width: 768px) {
+  .formGrid, .checkboxGrid {
+    grid-template-columns: 1fr;
+  }
+  .vehicleGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

@@ -1,0 +1,204 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.header h2 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.header p {
+  color: var(--text-gray);
+}
+
+.loadGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 1.5rem;
+}
+
+.loadCard {
+  background: var(--bg-card);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border-color);
+  padding: 1.5rem;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.loadCard:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--primary-100);
+}
+
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.payBadge {
+  display: flex;
+  align-items: center;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #16a34a;
+}
+
+.truckBadge {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: var(--bg-main);
+  padding: 0.25rem 0.75rem;
+  border-radius: 1rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-gray);
+}
+
+.routeBox {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  background: var(--bg-main);
+  padding: 1.25rem;
+  border-radius: var(--radius-md);
+}
+
+.routeItem {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.iconCircle {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.routeLabel {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--text-gray);
+}
+
+.routeCity {
+  font-size: 1.1rem;
+  color: var(--text-dark);
+}
+
+.routeConnector {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding-left: 15px; /* align with center of icon */
+  margin: 0.5rem 0;
+}
+
+.line {
+  width: 2px;
+  height: 20px;
+  background: dashed 2px var(--border-color);
+}
+
+.distance {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-light);
+  background: white;
+  padding: 0.125rem 0.5rem;
+  border-radius: 1rem;
+  border: 1px solid var(--border-color);
+}
+
+.detailsBox {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.detailRow {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.9rem;
+  color: var(--text-gray);
+}
+
+.detailIcon {
+  color: var(--primary-600);
+}
+
+.actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: auto;
+}
+
+.rejectBtn {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: #fee2e2;
+  color: #ef4444;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.2s;
+}
+
+.rejectBtn:hover {
+  background: #fecaca;
+  transform: scale(1.05);
+}
+
+.acceptBtn {
+  flex-grow: 1;
+  border-radius: 2rem;
+  background: var(--primary-600);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  font-size: 1rem;
+  transition: all 0.2s;
+  box-shadow: var(--shadow-md);
+}
+
+.acceptBtn:hover {
+  background: var(--primary-700);
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-2px);
+}
+
+.emptyState {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem;
+  background: var(--bg-card);
+  border-radius: var(--radius-xl);
+  border: 1px dashed var(--border-color);
+  color: var(--text-gray);
+  text-align: center;
+  gap: 1rem;
+}

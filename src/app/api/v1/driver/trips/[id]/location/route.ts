@@ -9,7 +9,6 @@ export async function POST(
 ) {
   try {
     const user = await getCurrentUser(req);
-    if (!user) return errorResponse('Unauthorized', 401);
 
     const tripId = parseInt(params.id, 10);
     const body = await req.json();

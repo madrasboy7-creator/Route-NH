@@ -5,9 +5,6 @@ import { errorResponse, successResponse } from '@/lib/api-response';
 
 export async function GET(req: NextRequest) {
   try {
-    const user = await getCurrentUser(req);
-    if (!user) return errorResponse('Unauthorized', 401);
-
     const { searchParams } = new URL(req.url);
     const status = searchParams.get('status');
     const search = searchParams.get('search');

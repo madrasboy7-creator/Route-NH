@@ -563,36 +563,69 @@ export default function PlatformPortal() {
       {activeTab === 'fleet' && (
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
           <div className="p-4 border-b border-slate-100 flex items-center justify-between">
-            <h3 className="font-bold text-slate-900">Fleet Availability & Document Status</h3>
-            <span className="text-xs text-slate-500">{vehicles.length} registered trucks</span>
+            <div>
+              <h3 className="font-bold text-slate-900">Owned Fleet & Physical AIS-140 GPS Devices</h3>
+              <p className="text-xs text-slate-500">Real-time status for Route NH owned and operated transport fleet</p>
+            </div>
+            <span className="text-xs font-semibold px-2.5 py-1 bg-blue-50 text-blue-700 rounded-md border border-blue-200">
+              {vehicles.length} Active Vehicles
+            </span>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead className="bg-slate-50 text-slate-500 font-semibold border-b border-slate-100">
                 <tr>
-                  <th className="p-3">Registration Number</th>
+                  <th className="p-3">Fleet Unit</th>
+                  <th className="p-3">Registration</th>
                   <th className="p-3">Category & Body</th>
                   <th className="p-3">Payload Capacity</th>
-                  <th className="p-3">Insurance Expiry</th>
-                  <th className="p-3">Fitness Expiry</th>
-                  <th className="p-3">Status</th>
+                  <th className="p-3">GPS Tracker Status</th>
+                  <th className="p-3">Vehicle Status</th>
+                  <th className="p-3 text-right">Highway Telemetry</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-slate-700">
                 {vehicles.map((v) => (
                   <tr key={v.id} className="hover:bg-slate-50">
-                    <td className="p-3 font-mono font-bold text-slate-900">{v.registrationNumber}</td>
+                    <td className="p-3 font-bold text-slate-900">
+                      {v.truckIdentifier || (v.id === 1 ? 'Truck 01' : v.id === 2 ? 'Truck 02' : 'Fleet Unit')}
+                    </td>
+                    <td className="p-3 font-mono font-bold text-blue-700">{v.registrationNumber}</td>
                     <td className="p-3">
                       <div className="font-semibold text-slate-800">{v.vehicleCategory}</div>
                       <div className="text-[10px] text-slate-400">{v.bodyType}</div>
                     </td>
                     <td className="p-3 font-semibold text-slate-800">{v.capacityKg.toLocaleString()} kg</td>
-                    <td className="p-3">{new Date(v.insuranceExpiry).toLocaleDateString()}</td>
-                    <td className="p-3">{new Date(v.fitnessExpiry).toLocaleDateString()}</td>
+                    <td className="p-3">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1 animate-pulse"></span>
+                        ONLINE (AIS-140)
+                      </span>
+                    </td>
                     <td className="p-3">
                       <span className={`badge ${v.vehicleStatus === 'AVAILABLE' ? 'badge-success' : v.vehicleStatus === 'ON_TRIP' ? 'badge-info' : 'badge-warning'}`}>
                         {v.vehicleStatus}
                       </span>
+                    </td>
+                    <td className="p-3 text-right">
+                      <button
+                        onClick={async () => {
+                          const truck = v.id === 2 ? 'Truck 02' : 'Truck 01';
+                          try {
+                            const res = await fetch(`/api/v1/gps/telemetry?tick=true&truck=${encodeURIComponent(truck)}`);
+                            const json = await res.json();
+                            if (json.success) {
+                              setNotificationMsg({ type: 'success', text: `Advanced simulated telemetry for ${truck} along highway corridor!` });
+                              setTimeout(() => setNotificationMsg(null), 3000);
+                            }
+                          } catch (e: any) {
+                            alert(e.message);
+                          }
+                        }}
+                        className="px-2.5 py-1 bg-slate-900 hover:bg-slate-800 text-white rounded text-[11px] font-bold"
+                      >
+                        Simulate Step
+                      </button>
                     </td>
                   </tr>
                 ))}

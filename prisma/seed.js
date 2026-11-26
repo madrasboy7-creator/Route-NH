@@ -251,15 +251,16 @@ async function main() {
     },
   });
 
-  // 8. Vehicles
+  // 8. Vehicles (Route NH Owned Fleet)
   const vehiclesData = [
     {
       id: 1,
       transporterId: 1,
-      registrationNumber: 'DL-01-AB-4589',
+      truckIdentifier: 'Truck 01',
+      registrationNumber: 'TN-01-AB-1234',
       vehicleCategory: '32ft MXL Container',
       bodyType: 'CONTAINER',
-      capacityKg: 18000,
+      capacityKg: 24000,
       lengthFt: 32.0,
       widthFt: 8.5,
       heightFt: 9.0,
@@ -272,10 +273,11 @@ async function main() {
     {
       id: 2,
       transporterId: 1,
-      registrationNumber: 'MH-04-GT-7821',
-      vehicleCategory: '20ft Multi-Axle',
+      truckIdentifier: 'Truck 02',
+      registrationNumber: 'TN-02-CD-5678',
+      vehicleCategory: '20ft Multi-Axle Open',
       bodyType: 'OPEN',
-      capacityKg: 12000,
+      capacityKg: 15000,
       lengthFt: 20.0,
       widthFt: 8.0,
       heightFt: 7.5,
@@ -288,6 +290,7 @@ async function main() {
     {
       id: 3,
       transporterId: 2,
+      truckIdentifier: 'Royal-03',
       registrationNumber: 'HR-55-AB-9012',
       vehicleCategory: '24ft Taurus',
       bodyType: 'FLATBED',
@@ -305,9 +308,45 @@ async function main() {
 
   for (const v of vehiclesData) {
     await prisma.vehicle.upsert({
-      where: { registrationNumber: v.registrationNumber },
+      where: { id: v.id },
       update: v,
       create: v,
+    });
+  }
+
+  // 8b. Physical AIS-140 GPS Devices for Owned Fleet
+  const gpsDevicesData = [
+    {
+      id: 1,
+      vehicleId: 1,
+      imei: '867492040192831',
+      deviceModel: 'AIS-140 Teltonika FMB920',
+      simNumber: '+919840192831',
+      protocol: 'traccar',
+      traccarDeviceId: 'TRAC-RNH-01',
+      deviceStatus: 'ONLINE',
+      batteryPercentage: 98.5,
+      lastCommunicationAt: new Date(),
+    },
+    {
+      id: 2,
+      vehicleId: 2,
+      imei: '867492040192832',
+      deviceModel: 'AIS-140 Concox GT06N',
+      simNumber: '+919840192832',
+      protocol: 'traccar',
+      traccarDeviceId: 'TRAC-RNH-02',
+      deviceStatus: 'ONLINE',
+      batteryPercentage: 94.0,
+      lastCommunicationAt: new Date(),
+    },
+  ];
+
+  for (const g of gpsDevicesData) {
+    await prisma.gpsDevice.upsert({
+      where: { vehicleId: g.vehicleId },
+      update: g,
+      create: g,
     });
   }
 
@@ -493,7 +532,7 @@ async function main() {
         },
         statusHistory: {
           create: [
-            { previousStatus: 'CREATED', newStatus: 'VEHICLE_ASSIGNED', updatedByUserId: 3, statusNote: 'Allocated 32ft MXL DL-01-AB-4589' },
+            { previousStatus: 'CREATED', newStatus: 'VEHICLE_ASSIGNED', updatedByUserId: 3, statusNote: 'Allocated 32ft MXL Truck 01 (TN-01-AB-1234)' },
             { previousStatus: 'VEHICLE_ASSIGNED', newStatus: 'DRIVER_ASSIGNED', updatedByUserId: 3, statusNote: 'Assigned Driver Ramesh Kumar Yadav' },
             { previousStatus: 'DRIVER_ASSIGNED', newStatus: 'AT_PICKUP', updatedByUserId: 6, statusNote: 'Reached Pune factory gate' },
             { previousStatus: 'AT_PICKUP', newStatus: 'LOADED', updatedByUserId: 6, statusNote: 'Loaded 28 packages. Cargo verified against invoice' },
@@ -502,10 +541,10 @@ async function main() {
         },
         tracking: {
           create: [
-            { driverId: 1, latitude: 18.6298, longitude: 73.7997, accuracyMeters: 5.2, speed: 0, heading: 0, recordedAt: new Date('2026-11-20T14:30:00.000Z') },
-            { driverId: 1, latitude: 19.8762, longitude: 74.4532, accuracyMeters: 4.8, speed: 58.5, heading: 18.0, recordedAt: new Date('2026-11-21T02:00:00.000Z') },
-            { driverId: 1, latitude: 22.3072, longitude: 73.1812, accuracyMeters: 3.9, speed: 64.0, heading: 12.0, recordedAt: new Date('2026-11-21T18:00:00.000Z') },
-            { driverId: 1, latitude: 24.5854, longitude: 73.7125, accuracyMeters: 4.1, speed: 60.2, heading: 15.0, recordedAt: new Date('2026-11-22T04:30:00.000Z') },
+            { driverId: 1, vehicleId: 1, gpsDeviceId: 1, latitude: 18.6298, longitude: 73.7997, accuracyMeters: 5.2, speed: 0, heading: 0, source: 'PHYSICAL_GPS', isSimulated: false, recordedAt: new Date('2026-11-20T14:30:00.000Z') },
+            { driverId: 1, vehicleId: 1, gpsDeviceId: 1, latitude: 19.8762, longitude: 74.4532, accuracyMeters: 4.8, speed: 58.5, heading: 18.0, source: 'PHYSICAL_GPS', isSimulated: false, recordedAt: new Date('2026-11-21T02:00:00.000Z') },
+            { driverId: 1, vehicleId: 1, gpsDeviceId: 1, latitude: 22.3072, longitude: 73.1812, accuracyMeters: 3.9, speed: 64.0, heading: 12.0, source: 'PHYSICAL_GPS', isSimulated: false, recordedAt: new Date('2026-11-21T18:00:00.000Z') },
+            { driverId: 1, vehicleId: 1, gpsDeviceId: 1, latitude: 24.5854, longitude: 73.7125, accuracyMeters: 4.1, speed: 60.2, heading: 15.0, source: 'PHYSICAL_GPS', isSimulated: false, recordedAt: new Date('2026-11-22T04:30:00.000Z') },
           ],
         },
         documents: {
